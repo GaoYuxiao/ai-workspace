@@ -1,0 +1,9 @@
+{
+  "business_search": "prod-gz",
+  "index_set_search": "prod-gz-mlog",
+  "query_string": "dsdaemon",
+  "start_time": 1765684155,
+  "end_time": 1765770555,
+  "time_range_hours": 24,
+  "instructions": "使用以下步骤查询日志：\n1. 搜索业务空间找到 bk_biz_id\n2. 列出索引集找到 index_set_id\n3. 搜索包含 dsdaemon 的日志\n4. 使用 stat_dsdaemon_logs.py 进行统计分析"
+}

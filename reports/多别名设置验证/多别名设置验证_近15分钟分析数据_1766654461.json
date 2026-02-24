@@ -1,0 +1,18 @@
+{
+  "timestamp": 1766654455,
+  "time_range": {
+    "start": 1766653555,
+    "end": 1766654455,
+    "start_str": "2025-12-25 17:05:55",
+    "end_str": "2025-12-25 17:20:55"
+  },
+  "config": {
+    "bk_biz_id": "2",
+    "index_set_id": "2545"
+  },
+  "level_distribution": null,
+  "error_logs": null,
+  "ip_distribution": null,
+  "code_file_distribution": null,
+  "metrics": {}
+}

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grok 日志解析示例</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "SF Pro Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #f5f6f8;
+      color: #1f2328;
+    }
+    h1, h2, h3 {
+      margin: 12px 0;
+      color: #0f172a;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: 600;
+    }
+    textarea, input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0 16px;
+      border-radius: 8px;
+      border: 1px solid #cbd5f5;
+      font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    textarea {
+      min-height: 130px;
+    }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      background: #2563eb;
+      color: #fff;
+    }
+    button.secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .flex {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .flex > .panel {
+      flex: 1 1 320px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table th, table td {
+      border: 1px solid #e2e8f0;
+      padding: 8px;
+      text-align: left;
+      font-size: 13px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 20px;
+      font-size: 11px;
+    }
+    pre {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 16px;
+      overflow: auto;
+    }
+    .error {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+    .tabs {
+      display: inline-flex;
+      border: 1px solid #cbd5f5;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .tabs button {
+      border-radius: 0;
+      background: transparent;
+      color: #475569;
+      margin: 0;
+      border-right: 1px solid #cbd5f5;
+    }
+    .tabs button:last-child {
+      border-right: none;
+    }
+    .tabs button.active {
+      background: #2563eb;
+      color: #fff;
+    }
+    .helper {
+      font-size: 13px;
+      color: #475569;
+    }
+    .toast {
+      background: #ecfccb;
+      color: #365314;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .hidden { display: none; }
+    .priority {
+      font-size: 12px;
+      color: #1d4ed8;
+      margin-left: 6px;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      width: min(560px, 92vw);
+      box-shadow: 0 25px 55px rgba(15, 23, 42, 0.25);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .modal-header h3 {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Grok 日志解析与模式库示例</h1>
+  <p>此示例展示 Grok 在日志平台的典型交互：在同一编辑器中切换 Grok/正则、引用模式库、实时预览结构化字段，并保留回退能力。</p>
+
+  <div class="panel">
+    <h2>解析模式</h2>
+    <label>模式类型</label><br />
+    <label><input type="radio" name="mode" value="grok" checked /> Grok 表达式</label>
+    <label style="margin-left: 12px;"><input type="radio" name="mode" value="regex" /> 传统正则</label>
+    <p class="helper">在 Grok 模式下可引用内置/自定义模式；切换到传统正则后沿用既有能力。</p>
+
+    <label for="patternInput">Grok/正则内容</label>
+    <textarea id="patternInput">%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{WORD:component} - %{GREEDYDATA:message}</textarea>
+
+    <div class="flex">
+      <div class="panel" style="flex:1 1 240px;">
+        <label for="librarySelect">模式库</label>
+        <select id="librarySelect"></select>
+        <label for="sampleSelect">使用示例</label>
+        <select id="sampleSelect">
+          <option value="">选择示例</option>
+          <option value="nginx">%{IPORHOST:client} - - \\[%{DATA:timestamp}\\] \"%{WORD:verb} %{URIPATHPARAM:path} HTTP/%{NUMBER:http_version}\" %{INT:status} %{INT:bytes}</option>
+          <option value="java">%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{JAVACLASS:klass} - %{GREEDYDATA:message}</option>
+        </select>
+        <button class="secondary" id="insertPattern">插入模式</button>
+        <button class="secondary" id="expandPattern">展开为正则</button>
+        <p class="helper">双击表格中的模式，也可快速填入定义。</p>
+      </div>
+      <div class="panel" style="flex:2 1 320px;">
+        <label for="logInput">日志样例</label>
+        <textarea id="logInput">2025-01-01T08:10:23Z INFO AuthService - user=jay action=login result=success
+2025-01-01T08:11:09Z ERROR Payment - user=mia action=checkout result=timeout</textarea>
+        <label for="flagsInput">正则标志（仅在传统模式下生效）</label>
+        <input id="flagsInput" value="g" />
+        <button id="parseBtn">解析日志</button>
+      </div>
+    </div>
+    <p class="error" id="patternError"></p>
+  </div>
+
+  <div class="panel">
+    <h2>模式列表</h2>
+    <p class="helper">可拖动自定义模式调整优先级，也可直接编辑数值。平台按优先级从小到大匹配。</p>
+    <table>
+      <thead>
+        <tr>
+          <th>名称</th>
+          <th>优先级</th>
+          <th>来源</th>
+          <th>描述</th>
+          <th>更新时间</th>
+          <th>定义</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="patternTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel compact">
+    <div class="flex" style="align-items:center; justify-content:space-between;">
+      <div>
+        <h2 style="margin-bottom:4px;">模式库管理</h2>
+        <p class="helper" style="max-width:480px;">
+          通过新增/编辑模式来扩展 Grok 模式库。新增配置会自动记录更新时间，可在列表中查看引用情况。
+        </p>
+      </div>
+      <button id="openModal">新增模式</button>
+    </div>
+    <div id="priorityHint" class="toast hidden">
+      模式的优先级越小越先匹配；冲突模式可通过拖动排序或修改数值解决。
+    </div>
+    <p id="patternFormMsg"></p>
+  </div>
+
+  <div class="modal hidden" id="patternModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">新增 Grok 模式</h3>
+        <button class="secondary" id="closeModal">关闭</button>
+      </div>
+      <form id="patternForm">
+        <div class="flex">
+          <div class="panel" style="flex:1 1 280px; box-shadow:none; padding:0;">
+            <label>名称（大写字母/下划线）</label>
+            <input id="patternName" placeholder="如 NGINX_ACCESSLOG" required />
+          </div>
+          <div class="panel" style="flex:1 1 180px; box-shadow:none; padding:0 0 0 10px;">
+            <label>优先级</label>
+            <input id="patternPriority" type="number" min="1" value="100" />
+          </div>
+        </div>
+        <label>描述</label>
+        <input id="patternDescription" placeholder="可选" />
+        <label>Grok 定义（可引用其他模式）</label>
+        <textarea id="patternDefinition" placeholder="例如 %{IPORHOST:client} %{HTTPVERB:verb} %{URIPATHPARAM:path}"></textarea>
+        <input type="hidden" id="editingName" />
+        <div style="text-align:right; margin-top:12px;">
+          <button type="button" class="secondary" id="modalCancel">取消</button>
+          <button type="submit" id="submitBtn">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>解析结果</h2>
+    <p id="parseSummary"></p>
+    <div class="tabs">
+      <button data-view="json" class="active">JSON 视图</button>
+      <button data-view="table">表格视图</button>
+    </div>
+    <pre id="parseOutput">等待解析...</pre>
+    <div id="tableWrapper" class="hidden">
+      <table>
+        <thead id="resultHead"></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const builtInPatterns = {
+      WORD: "[A-Za-z]+",
+      INT: "(?:[+-]?(?:[0-9]+))",
+      NUMBER: "(?:[+-]?(?:[0-9]+(?:\\.[0-9]+)?))",
+      DATA: ".*?",
+      GREEDYDATA: ".*",
+      IPV4: "(?:\\d{1,3}\\.){3}\\d{1,3}",
+      IPORHOST: "(?:\\d{1,3}(?:\\.\\d{1,3}){3}|[A-Za-z0-9_.-]+)",
+      TIMESTAMP_ISO8601: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z?",
+      UUID: "[A-Fa-f0-9-]{36}",
+      LOGLEVEL: "TRACE|DEBUG|INFO|WARN|ERROR|FATAL",
+      JAVACLASS: "(?:[A-Za-z_][\\w$]*\\.)*[A-Za-z_$][\\w$]*",
+      HTTPVERB: "GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD",
+      URIPATHPARAM: "[A-Za-z0-9_\\-\\./%]+",
+      QS: "\".*?\""
+    };
+    const builtInMeta = {
+      WORD: { description: "单词", updatedAt: "内置" },
+      INT: { description: "整数", updatedAt: "内置" },
+      NUMBER: { description: "数字", updatedAt: "内置" },
+      DATA: { description: "非贪婪任意", updatedAt: "内置" },
+      GREEDYDATA: { description: "贪婪任意", updatedAt: "内置" },
+      IPV4: { description: "IPv4 地址", updatedAt: "内置" },
+      IPORHOST: { description: "IP 或主机", updatedAt: "内置" },
+      TIMESTAMP_ISO8601: { description: "ISO 时间戳", updatedAt: "内置" },
+      UUID: { description: "UUID", updatedAt: "内置" },
+      LOGLEVEL: { description: "日志级别", updatedAt: "内置" },
+      JAVACLASS: { description: "Java 类名", updatedAt: "内置" },
+      HTTPVERB: { description: "HTTP 动词", updatedAt: "内置" },
+      URIPATHPARAM: { description: "URI 路径参数", updatedAt: "内置" },
+      QS: { description: "双引号字符串", updatedAt: "内置" }
+    };
+
+    const storageKey = "grok-demo-patterns";
+
+    function loadCustomPatterns() {
+      try {
+        return (JSON.parse(localStorage.getItem(storageKey)) || []).sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+      } catch (err) {
+        console.warn("无法读取 localStorage", err);
+        return [];
+      }
+    }
+
+    function saveCustomPatterns(patterns) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(patterns));
+      } catch (err) {
+        console.warn("无法写入 localStorage", err);
+      }
+    }
+
+    const patternSelect = document.getElementById("librarySelect");
+    const patternTableBody = document.getElementById("patternTableBody");
+    const patternError = document.getElementById("patternError");
+    const parseOutput = document.getElementById("parseOutput");
+    const parseSummary = document.getElementById("parseSummary");
+    const patternModal = document.getElementById("patternModal");
+    const openModalBtn = document.getElementById("openModal");
+    const closeModalBtn = document.getElementById("closeModal");
+    const modalCancelBtn = document.getElementById("modalCancel");
+    const modalTitle = document.getElementById("modalTitle");
+    const patternFormMsg = document.getElementById("patternFormMsg");
+
+    function getPatternDictionary() {
+      const dict = { ...builtInPatterns };
+      loadCustomPatterns().forEach(item => {
+        dict[item.name] = item.definition;
+      });
+      return dict;
+    }
+
+    function renderPatternLibrary() {
+      const items = loadCustomPatterns();
+      patternSelect.innerHTML = "";
+
+      const defaultOption = document.createElement("option");
+      defaultOption.textContent = "选择一个模式以插入";
+      defaultOption.value = "";
+      patternSelect.appendChild(defaultOption);
+
+      Object.entries(builtInPatterns).forEach(([name, def]) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = `${name} (内置)`;
+        patternSelect.appendChild(option);
+      });
+
+      if (items.length) {
+        const separator = document.createElement("option");
+        separator.disabled = true;
+        separator.textContent = "———— 自定义模式 ————";
+        patternSelect.appendChild(separator);
+
+        items.forEach(item => {
+          const option = document.createElement("option");
+          option.value = item.name;
+          option.textContent = `${item.name} (自定义)`;
+          patternSelect.appendChild(option);
+        });
+      }
+
+      patternTableBody.innerHTML = "";
+      const renderRow = (item, source) => {
+        const { name, definition, priority = 100, description = "", updatedAt = "" } = item;
+        const tr = document.createElement("tr");
+        tr.draggable = source === "自定义";
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${source === "自定义"
+            ? `<input class="priorityInput" data-name="${name}" type="number" value="${priority}" min="1" />`
+            : `<span class="priority">${priority}</span>`}</td>
+          <td><span class="badge">${source}</span></td>
+          <td>${description || "-"}</td>
+          <td>${updatedAt || "-"}</td>
+          <td><code>${definition}</code></td>
+          <td>
+            ${source === "自定义" ? `
+              <button data-name="${name}" class="secondary editBtn">编辑</button>
+              <button data-name="${name}" class="secondary deleteBtn">删除</button>` : "--"}
+          </td>
+        `;
+        tr.addEventListener("dblclick", () => {
+          document.getElementById("patternInput").value = `%{${name}:field}`;
+        });
+        patternTableBody.appendChild(tr);
+      };
+
+      Object.entries(builtInPatterns).forEach(([name, definition]) =>
+        renderRow({ name, definition, priority: 0, ...builtInMeta[name] }, "内置")
+      );
+      items.forEach(item => renderRow(item, "自定义"));
+
+      // Drag & drop to reorder priority
+      let dragSource = null;
+      patternTableBody.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("dragstart", () => dragSource = row);
+        row.addEventListener("dragover", event => {
+          event.preventDefault();
+          const target = event.currentTarget;
+          if (dragSource && dragSource !== target && target.querySelector(".priorityInput")) {
+            patternTableBody.insertBefore(dragSource, target.nextSibling);
+          }
+        });
+        row.addEventListener("dragend", () => {
+          dragSource = null;
+          persistPriorityFromTable();
+        });
+      });
+    }
+
+    function addCustomPattern(payload) {
+      const items = loadCustomPatterns();
+      const { name } = payload;
+      if (!/^[A-Z0-9_]+$/.test(name)) {
+        throw new Error("名称需为大写字母、数字或下划线");
+      }
+      if (builtInPatterns[name]) {
+        throw new Error("名称与内置模式冲突");
+      }
+      if (items.some(p => p.name === name)) {
+        throw new Error("模式名称已存在");
+      }
+      if (!payload.definition.trim()) {
+        throw new Error("定义不能为空");
+      }
+      items.push(payload);
+      saveCustomPatterns(items);
+      renderPatternLibrary();
+    }
+
+    function deleteCustomPattern(name) {
+      const items = loadCustomPatterns().filter(item => item.name !== name);
+      saveCustomPatterns(items);
+      renderPatternLibrary();
+    }
+
+    function expandGrok(pattern) {
+      const dict = getPatternDictionary();
+      const token = /%\{([A-Za-z0-9_]+)(?::([A-Za-z0-9_]+))?\}/g;
+      let expanded = pattern;
+      let iterations = 0;
+
+      while (token.test(expanded)) {
+        token.lastIndex = 0;
+        expanded = expanded.replace(token, (_, name, field) => {
+          const body = dict[name];
+          if (!body) {
+            throw new Error(`未找到模式 ${name}`);
+          }
+          return field ? `(?<${field}>${body})` : `(${body})`;
+        });
+        iterations++;
+        if (iterations > 50) {
+          throw new Error("模式嵌套过深，可能存在循环引用");
+        }
+      }
+      return expanded;
+    }
+
+    function buildTable(rows) {
+      const tableWrapper = document.getElementById("tableWrapper");
+      const head = document.getElementById("resultHead");
+      const body = document.getElementById("resultBody");
+      if (!rows.length) {
+        tableWrapper.classList.add("hidden");
+        return;
+      }
+      const columns = new Set();
+      rows.forEach(row => Object.keys(row).forEach(key => columns.add(key)));
+      const cols = Array.from(columns);
+      head.innerHTML = "<tr>" + cols.map(col => `<th>${col}</th>`).join("") + "</tr>";
+      body.innerHTML = rows.map(row => (
+        "<tr>" + cols.map(col => `<td>${row[col] ?? ""}</td>`).join("") + "</tr>"
+      )).join("");
+      tableWrapper.classList.remove("hidden");
+    }
+
+    function parseLogs() {
+      const mode = document.querySelector("input[name='mode']:checked").value;
+      const pattern = document.getElementById("patternInput").value.trim();
+      const logs = document.getElementById("logInput").value.split("\n").filter(Boolean);
+      const flags = document.getElementById("flagsInput").value || "g";
+      patternError.textContent = "";
+
+      if (!pattern) {
+        patternError.textContent = "模式内容不能为空";
+        return;
+      }
+
+      let regex;
+      try {
+        if (mode === "grok") {
+          const expanded = expandGrok(pattern);
+          regex = new RegExp(expanded);
+        } else {
+          regex = new RegExp(pattern, flags);
+        }
+      } catch (err) {
+        patternError.textContent = `编译失败：${err.message}`;
+        return;
+      }
+
+      const results = [];
+      logs.forEach(line => {
+        const execRegex = regex.global ? new RegExp(regex.source, regex.flags) : regex;
+        const match = execRegex.exec(line);
+        if (match) {
+          const entry = { _raw: line };
+          if (match.groups) {
+            Object.entries(match.groups).forEach(([key, value]) => entry[key] = value);
+          } else {
+            match.forEach((value, idx) => entry[`$${idx}`] = value);
+          }
+          results.push(entry);
+        } else {
+          results.push({ _raw: line, _match: false });
+        }
+      });
+
+      parseSummary.textContent = `共 ${logs.length} 条日志，匹配成功 ${results.filter(r => r._match !== false).length} 条。`;
+      parseOutput.textContent = JSON.stringify(results, null, 2);
+      buildTable(results);
+    }
+
+    // Event bindings
+    document.getElementById("insertPattern").addEventListener("click", () => {
+      const value = patternSelect.value;
+      if (!value) return;
+      const textarea = document.getElementById("patternInput");
+      const insertion = `%{${value}:field_name}`;
+      textarea.value = textarea.value
+        ? `${textarea.value} ${insertion}`
+        : insertion;
+    });
+
+    document.getElementById("expandPattern").addEventListener("click", () => {
+      try {
+        const expanded = expandGrok(document.getElementById("patternInput").value.trim());
+        navigator.clipboard?.writeText(expanded);
+        alert("已展开并复制到剪贴板：\n" + expanded);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById("parseBtn").addEventListener("click", parseLogs);
+
+    document.getElementById("sampleSelect").addEventListener("change", event => {
+      const value = event.target.value;
+      if (!value) return;
+      const selected = event.target.options[event.target.selectedIndex].text;
+      document.getElementById("patternInput").value = event.target.value === "java"
+        ? "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} %{JAVACLASS:clazz} - %{GREEDYDATA:message}"
+        : "%{IPORHOST:client} - - \\[%{DATA:timestamp}\\] \"%{WORD:verb} %{URIPATHPARAM:path} HTTP/%{NUMBER:http_version}\" %{INT:status} %{INT:bytes}";
+      document.getElementById("logInput").value = value === "java"
+        ? "2025-02-01T10:00:11Z WARN com.example.Payment - java.lang.IllegalStateException: timeout"
+        : '10.0.0.1 - - [01/Feb/2025:10:00:12 +0800] "GET /api/orders HTTP/1.1" 200 1234';
+    });
+
+    document.querySelectorAll(".tabs button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const view = btn.dataset.view;
+        if (view === "json") {
+          document.getElementById("parseOutput").classList.remove("hidden");
+          document.getElementById("tableWrapper").classList.add("hidden");
+        } else {
+          document.getElementById("parseOutput").classList.add("hidden");
+          document.getElementById("tableWrapper").classList.remove("hidden");
+        }
+      });
+    });
+
+    function persistPriorityFromTable() {
+      const rows = Array.from(patternTableBody.querySelectorAll("tr"));
+      const items = loadCustomPatterns();
+      rows.forEach((row, index) => {
+        const input = row.querySelector(".priorityInput");
+        if (input) {
+          const name = input.dataset.name;
+          const item = items.find(p => p.name === name);
+          if (item) {
+            item.priority = Number(input.value) || (index + 1);
+          }
+        }
+      });
+      saveCustomPatterns(items.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100)));
+    }
+
+    function upsertPattern(data) {
+      const items = loadCustomPatterns();
+      const now = new Date().toLocaleString();
+      const payload = {
+        ...data,
+        definition: data.definition.trim(),
+        description: data.description.trim(),
+        updatedAt: now,
+        priority: Number(data.priority) || 100
+      };
+      if (data.editing) {
+        const target = items.find(item => item.name === data.editingName);
+        if (!target) throw new Error("未找到要编辑的模式");
+        payload.name = data.editingName;
+        Object.assign(target, payload);
+      } else {
+        addCustomPattern(payload);
+        return;
+      }
+      saveCustomPatterns(items);
+      renderPatternLibrary();
+    }
+
+    function openModal(isEditing=false) {
+      patternModal.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      modalTitle.textContent = isEditing ? "编辑 Grok 模式" : "新增 Grok 模式";
+    }
+
+    function closeModal() {
+      patternModal.classList.add("hidden");
+      document.body.style.overflow = "";
+      resetForm();
+    }
+
+    function resetForm() {
+      document.getElementById("patternForm").reset();
+      document.getElementById("editingName").value = "";
+      document.getElementById("patternName").readOnly = false;
+      document.getElementById("submitBtn").textContent = "保存";
+      patternFormMsg.textContent = "";
+    }
+
+    openModalBtn.addEventListener("click", () => openModal(false));
+    closeModalBtn.addEventListener("click", closeModal);
+    modalCancelBtn.addEventListener("click", closeModal);
+    patternModal.addEventListener("click", event => {
+      if (event.target === patternModal) {
+        closeModal();
+      }
+    });
+
+    document.getElementById("patternForm").addEventListener("submit", event => {
+      event.preventDefault();
+      patternFormMsg.textContent = "";
+      try {
+        upsertPattern({
+          name: document.getElementById("patternName").value.trim(),
+          definition: document.getElementById("patternDefinition").value.trim(),
+          description: document.getElementById("patternDescription").value,
+          priority: document.getElementById("patternPriority").value,
+          editing: Boolean(document.getElementById("editingName").value),
+          editingName: document.getElementById("editingName").value,
+          updatedAt: new Date().toLocaleString()
+        });
+        patternFormMsg.textContent = "保存成功！";
+        patternFormMsg.classList.remove("error");
+        closeModal();
+      } catch (err) {
+        patternFormMsg.textContent = err.message;
+        patternFormMsg.classList.add("error");
+      }
+    });
+
+    patternTableBody.addEventListener("click", event => {
+      if (event.target.classList.contains("deleteBtn")) {
+        deleteCustomPattern(event.target.dataset.name);
+      }
+      if (event.target.classList.contains("editBtn")) {
+        const name = event.target.dataset.name;
+        const items = loadCustomPatterns();
+        const item = items.find(p => p.name === name);
+        if (!item) return;
+        document.getElementById("patternName").value = item.name;
+        document.getElementById("patternDefinition").value = item.definition;
+        document.getElementById("patternDescription").value = item.description || "";
+        document.getElementById("patternPriority").value = item.priority || 100;
+        document.getElementById("editingName").value = item.name;
+        document.getElementById("patternName").readOnly = true;
+        document.getElementById("submitBtn").textContent = "更新";
+        openModal(true);
+        patternFormMsg.textContent = `正在编辑 ${item.name}`;
+      }
+    });
+
+    patternTableBody.addEventListener("change", event => {
+      if (event.target.classList.contains("priorityInput")) {
+        persistPriorityFromTable();
+      }
+    });
+
+    renderPatternLibrary();
+    parseLogs();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,171 @@
+{
+  "test_name": "BKLog字段管理测试",
+  "description": "测试字段列表管理功能：将可选字段添加为显示字段，并调整显示字段的排序（交换第一个和第三个）",
+  "url": "https://bklog.woa.com",
+  "timeout": 120000,
+  "test_cases": [
+    {
+      "test_name": "字段添加和排序测试",
+      "description": "从可选字段列表添加字段到显示字段，并调整显示字段的排序（交换第一个和第三个）",
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://bklog.woa.com",
+          "description": "导航到日志平台首页"
+        },
+        {
+          "action": "wait_for",
+          "text": "日志",
+          "timeout": 10000,
+          "description": "等待页面加载完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取页面快照，定位业务选择器"
+        },
+        {
+          "action": "click",
+          "target": "业务选择器",
+          "description": "点击业务选择器"
+        },
+        {
+          "action": "click",
+          "target": "demo业务选项",
+          "description": "选择demo业务"
+        },
+        {
+          "action": "wait_for",
+          "text": "索引集",
+          "timeout": 5000,
+          "description": "等待业务切换完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取检索页面快照"
+        },
+        {
+          "action": "click",
+          "target": "索引集选择器",
+          "description": "点击索引集选择器"
+        },
+        {
+          "action": "click",
+          "target": "容器日志索引集",
+          "description": "选择容器日志索引集"
+        },
+        {
+          "action": "wait_for",
+          "text": "查询结果统计",
+          "timeout": 10000,
+          "description": "等待索引集加载完成，字段列表显示"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取字段过滤区域快照，查看字段列表"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const visibleFields = Array.from(document.querySelectorAll('.fields-container.selected .filed-item-old .field-name')).map(el => el.textContent.trim()).filter(Boolean); const optionalFields = Array.from(document.querySelectorAll('.fields-container.optional-field .filed-item-old .field-name')).map(el => el.textContent.trim()).filter(Boolean); return { visibleFieldCount: visibleFields.length, optionalFieldCount: optionalFields.length, visibleFields: visibleFields.slice(0, 5), optionalFields: optionalFields.slice(0, 5) }; }",
+          "description": "获取当前显示字段和可选字段的数量和名称"
+        },
+        {
+          "action": "wait_for",
+          "text": "可选字段",
+          "timeout": 5000,
+          "description": "等待可选字段区域显示（如果存在）"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取字段列表完整快照，定位可选字段和显示字段"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const optionalFieldItems = Array.from(document.querySelectorAll('.fields-container.optional-field .filed-item-old')); if (optionalFieldItems.length === 0) { return { success: false, message: '未找到可选字段，可能需要先展开可选字段区域或字段已在显示列表中' }; } const firstOptionalField = optionalFieldItems[0]; const fieldNameEl = firstOptionalField.querySelector('.field-name'); const fieldName = fieldNameEl ? fieldNameEl.textContent.trim() : ''; const showButton = firstOptionalField.querySelector('.operation-icon-box .include-icon.icon-eye'); if (!showButton) { return { success: false, message: '未找到显示按钮，字段可能已经是显示状态' }; } return { success: true, fieldName: fieldName, hasShowButton: true }; }",
+          "description": "检查第一个可选字段是否存在显示按钮"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取可选字段区域详细快照，准备点击显示按钮"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const optionalFieldItems = Array.from(document.querySelectorAll('.fields-container.optional-field .filed-item-old')); if (optionalFieldItems.length === 0) return { success: false, message: '未找到可选字段' }; const targetField = optionalFieldItems[0]; const showButton = targetField.querySelector('.operation-icon-box .include-icon.icon-eye'); if (!showButton) return { success: false, message: '未找到显示按钮' }; const fieldName = targetField.querySelector('.field-name')?.textContent.trim() || ''; const beforeCount = document.querySelectorAll('.fields-container.selected .filed-item-old').length; showButton.click(); setTimeout(() => { const afterCount = document.querySelectorAll('.fields-container.selected .filed-item-old').length; return { success: true, clicked: true, fieldName: fieldName, beforeCount: beforeCount, afterCount: afterCount, added: afterCount > beforeCount }; }, 500); return { success: true, clicked: true, fieldName: fieldName }; }",
+          "description": "点击第一个可选字段的显示按钮（眼睛图标），将其添加到显示字段"
+        },
+        {
+          "action": "wait_for",
+          "timeout": 2000,
+          "description": "等待字段添加操作完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取显示字段列表快照，确认字段已添加"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const visibleFieldItems = Array.from(document.querySelectorAll('.fields-container.selected .filed-item-old')); if (visibleFieldItems.length < 3) { return { success: false, message: '显示字段少于3个，无法进行排序操作。当前字段数：' + visibleFieldItems.length, fieldCount: visibleFieldItems.length }; } const fieldNames = visibleFieldItems.map((item, index) => { const nameEl = item.querySelector('.field-name'); return { index: index, name: nameEl ? nameEl.textContent.trim() : '' }; }).filter(item => item.name); return { success: true, fieldCount: visibleFieldItems.length, originalOrder: fieldNames.map(f => f.name), firstFieldName: fieldNames[0]?.name || '', thirdFieldName: fieldNames[2]?.name || '' }; }",
+          "description": "获取显示字段列表，确认至少有3个字段用于排序，并记录原始顺序"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取显示字段列表快照，准备进行排序操作"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const visibleFieldItems = Array.from(document.querySelectorAll('.fields-container.selected .filed-item-old')); if (visibleFieldItems.length < 3) return { success: false, message: '字段数量不足' }; const firstField = visibleFieldItems[0]; const thirdField = visibleFieldItems[2]; const firstFieldName = firstField.querySelector('.field-name')?.textContent.trim() || ''; const thirdFieldName = thirdField.querySelector('.field-name')?.textContent.trim() || ''; const listContainer = document.querySelector('.fields-container.selected .filed-list'); if (!listContainer) return { success: false, message: '未找到字段列表容器' }; return { success: true, firstFieldName: firstFieldName, thirdFieldName: thirdFieldName, listContainer: listContainer, firstField: firstField, thirdField: thirdField }; }",
+          "description": "定位第一个和第三个字段元素，准备交换位置"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取拖拽前的字段列表快照，用于获取元素uid"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const visibleFieldItems = Array.from(document.querySelectorAll('.fields-container.selected .filed-item-old')); if (visibleFieldItems.length < 3) return { success: false, message: '字段数量不足' }; const firstField = visibleFieldItems[0]; const thirdField = visibleFieldItems[2]; const firstDragHandle = firstField.querySelector('.bklog-drag-dots'); if (!firstDragHandle) return { success: false, message: '未找到第一个字段的拖拽点' }; const firstFieldName = firstField.querySelector('.field-name')?.textContent.trim() || ''; const thirdFieldName = thirdField.querySelector('.field-name')?.textContent.trim() || ''; const originalOrder = visibleFieldItems.map(item => item.querySelector('.field-name')?.textContent.trim() || '').filter(Boolean); return { success: true, firstFieldName: firstFieldName, thirdFieldName: thirdFieldName, originalOrder: originalOrder, readyForDrag: true }; }",
+          "description": "准备拖拽操作：定位第一个字段的拖拽点和第三个字段，记录原始顺序"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取拖拽前的字段列表快照，用于获取元素uid进行拖拽"
+        },
+        {
+          "action": "drag",
+          "from_uid": "显示字段列表第一个字段的拖拽点",
+          "to_uid": "显示字段列表第三个字段",
+          "description": "将第一个字段拖拽到第三个字段的位置（交换位置）"
+        },
+        {
+          "action": "wait_for",
+          "timeout": 1000,
+          "description": "等待DOM更新完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取排序后的显示字段列表快照，验证排序结果"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const visibleFieldItems = Array.from(document.querySelectorAll('.fields-container.selected .filed-item-old')); const fieldNames = visibleFieldItems.map(item => { const nameEl = item.querySelector('.field-name'); return nameEl ? nameEl.textContent.trim() : ''; }).filter(Boolean); return { success: true, fieldCount: visibleFieldItems.length, currentOrder: fieldNames, firstField: fieldNames[0] || '', thirdField: fieldNames[2] || '' }; }",
+          "description": "验证排序后的字段顺序"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "element_exists",
+          "target": "显示字段区域",
+          "description": "验证显示字段区域存在"
+        },
+        {
+          "type": "custom",
+          "description": "验证字段已成功添加到显示字段列表",
+          "check": "fieldCount > originalFieldCount"
+        },
+        {
+          "type": "custom",
+          "description": "验证第一个和第三个字段的位置已交换",
+          "check": "currentFirstField === originalThirdField && currentThirdField === originalFirstField"
+        }
+      ]
+    }
+  ]
+}

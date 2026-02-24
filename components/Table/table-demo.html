@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格组件演示 - 四个状态列</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .demo-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #dcdee5;
+        }
+        
+        .demo-header h1 {
+            font-size: 18px;
+            color: #313238;
+            margin-bottom: 8px;
+        }
+        
+        .demo-header p {
+            font-size: 14px;
+            color: #63656e;
+        }
+        
+        #root {
+            width: 100%;
+        }
+    </style>
+    <link rel="stylesheet" href="Table.css">
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>数据表格组件演示</h1>
+            <p>包含四个状态列（状态1、状态2、状态3、状态4），每个状态列支持四种状态类型：成功、警告、错误、信息</p>
+        </div>
+        <div id="root"></div>
+    </div>
+
+    <!-- React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel Standalone for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 状态类型定义
+        const StatusType = {
+            SUCCESS: 'success',
+            WARNING: 'warning',
+            ERROR: 'error',
+            INFO: 'info'
+        };
+
+        // 状态徽标组件
+        const StatusBadge = ({ status, label }) => {
+            const getStatusColor = (status) => {
+                switch (status) {
+                    case StatusType.SUCCESS:
+                        return '#2CAF5E'; // 绿色
+                    case StatusType.WARNING:
+                        return '#FF9C01'; // 橙色
+                    case StatusType.ERROR:
+                        return '#EA3636'; // 红色
+                    case StatusType.INFO:
+                        return '#3A84FF'; // 蓝色
+                    default:
+                        return '#979BA5'; // 灰色
+                }
+            };
+
+            return (
+                <div className="status-badge">
+                    <div className="status-badge-content">
+                        <div className="status-icon-wrapper">
+                            <div 
+                                className="status-dot" 
+                                style={{ backgroundColor: getStatusColor(status) }}
+                            />
+                        </div>
+                        <span className="status-label">{label}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        // 开关组件
+        const Switch = ({ checked, onChange }) => {
+            return (
+                <div 
+                    className={`switch ${checked ? 'switch-on' : 'switch-off'}`}
+                    onClick={() => onChange(!checked)}
+                >
+                    <div className="switch-dot" />
+                </div>
+            );
+        };
+
+        // 复选框组件
+        const Checkbox = ({ checked, onChange }) => {
+            return (
+                <div 
+                    className={`checkbox ${checked ? 'checkbox-checked' : ''}`}
+                    onClick={() => onChange(!checked)}
+                >
+                    {checked && <span className="checkbox-checkmark">✓</span>}
+                </div>
+            );
+        };
+
+        // 表格组件
+        const Table = () => {
+            const [rows, setRows] = useState([
+                { id: '1', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.SUCCESS, status2: StatusType.WARNING, status3: StatusType.ERROR, status4: StatusType.INFO },
+                { id: '2', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.SUCCESS, status2: StatusType.INFO, status3: StatusType.WARNING, status4: StatusType.SUCCESS },
+                { id: '3', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.WARNING, status2: StatusType.ERROR, status3: StatusType.INFO, status4: StatusType.WARNING },
+                { id: '4', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.ERROR, status2: StatusType.SUCCESS, status3: StatusType.SUCCESS, status4: StatusType.ERROR },
+                { id: '5', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.INFO, status2: StatusType.WARNING, status3: StatusType.ERROR, status4: StatusType.INFO },
+                { id: '6', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.SUCCESS, status2: StatusType.SUCCESS, status3: StatusType.INFO, status4: StatusType.WARNING },
+                { id: '7', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.WARNING, status2: StatusType.INFO, status3: StatusType.SUCCESS, status4: StatusType.ERROR },
+                { id: '8', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.ERROR, status2: StatusType.ERROR, status3: StatusType.WARNING, status4: StatusType.SUCCESS },
+                { id: '9', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.INFO, status2: StatusType.SUCCESS, status3: StatusType.ERROR, status4: StatusType.INFO },
+                { id: '10', title: 'Blue King', enabled: true, description: 'Blue King', status1: StatusType.SUCCESS, status2: StatusType.WARNING, status3: StatusType.INFO, status4: StatusType.WARNING },
+            ]);
+
+            const [selectedRows, setSelectedRows] = useState(new Set());
+            const [currentPage, setCurrentPage] = useState(1);
+            const itemsPerPage = 10;
+            const totalItems = 198;
+
+            const handleRowSelect = (id) => {
+                const newSelected = new Set(selectedRows);
+                if (newSelected.has(id)) {
+                    newSelected.delete(id);
+                } else {
+                    newSelected.add(id);
+                }
+                setSelectedRows(newSelected);
+            };
+
+            const handleSelectAll = () => {
+                if (selectedRows.size === rows.length) {
+                    setSelectedRows(new Set());
+                } else {
+                    setSelectedRows(new Set(rows.map(row => row.id)));
+                }
+            };
+
+            const handleToggleSwitch = (id) => {
+                setRows(rows.map(row => 
+                    row.id === id ? { ...row, enabled: !row.enabled } : row
+                ));
+            };
+
+            const getStatusLabel = (status) => {
+                switch (status) {
+                    case StatusType.SUCCESS:
+                        return '成功';
+                    case StatusType.WARNING:
+                        return '警告';
+                    case StatusType.ERROR:
+                        return '错误';
+                    case StatusType.INFO:
+                        return '信息';
+                    default:
+                        return '未知';
+                }
+            };
+
+            return (
+                <div className="table-container">
+                    <div className="table-wrapper">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th className="table-header checkbox-header">
+                                        <Checkbox 
+                                            checked={selectedRows.size === rows.length && rows.length > 0}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </th>
+                                    <th className="table-header">Title</th>
+                                    <th className="table-header">开关</th>
+                                    <th className="table-header">描述</th>
+                                    <th className="table-header">状态1</th>
+                                    <th className="table-header">状态2</th>
+                                    <th className="table-header">状态3</th>
+                                    <th className="table-header">状态4</th>
+                                    <th className="table-header">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row) => (
+                                    <tr key={row.id} className="table-row">
+                                        <td className="table-cell checkbox-cell">
+                                            <Checkbox 
+                                                checked={selectedRows.has(row.id)}
+                                                onChange={() => handleRowSelect(row.id)}
+                                            />
+                                        </td>
+                                        <td className="table-cell">{row.title}</td>
+                                        <td className="table-cell switch-cell">
+                                            <Switch 
+                                                checked={row.enabled}
+                                                onChange={(checked) => handleToggleSwitch(row.id)}
+                                            />
+                                        </td>
+                                        <td className="table-cell">{row.description}</td>
+                                        <td className="table-cell status-cell">
+                                            <StatusBadge status={row.status1} label={getStatusLabel(row.status1)} />
+                                        </td>
+                                        <td className="table-cell status-cell">
+                                            <StatusBadge status={row.status2} label={getStatusLabel(row.status2)} />
+                                        </td>
+                                        <td className="table-cell status-cell">
+                                            <StatusBadge status={row.status3} label={getStatusLabel(row.status3)} />
+                                        </td>
+                                        <td className="table-cell status-cell">
+                                            <StatusBadge status={row.status4} label={getStatusLabel(row.status4)} />
+                                        </td>
+                                        <td className="table-cell action-cell">
+                                            <a href="#" className="action-link" onClick={(e) => e.preventDefault()}>操作</a>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* 设置按钮 */}
+                    <div className="table-setting">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M7 8.75C7.9665 8.75 8.75 7.9665 8.75 7C8.75 6.0335 7.9665 5.25 7 5.25C6.0335 5.25 5.25 6.0335 5.25 7C5.25 7.9665 6.0335 8.75 7 8.75Z" fill="#C4C6CC"/>
+                            <path d="M7 1.75C7.41421 1.75 7.75 1.41421 7.75 1C7.75 0.585786 7.41421 0.25 7 0.25C6.58579 0.25 6.25 0.585786 6.25 1C6.25 1.41421 6.58579 1.75 7 1.75Z" fill="#C4C6CC"/>
+                            <path d="M7 13.75C7.41421 13.75 7.75 13.4142 7.75 13C7.75 12.5858 7.41421 12.25 7 12.25C6.58579 12.25 6.25 12.5858 6.25 13C6.25 13.4142 6.58579 13.75 7 13.75Z" fill="#C4C6CC"/>
+                            <path d="M1 7C1 7.41421 1.33579 7.75 1.75 7.75C2.16421 7.75 2.5 7.41421 2.5 7C2.5 6.58579 2.16421 6.25 1.75 6.25C1.33579 6.25 1 6.58579 1 7Z" fill="#C4C6CC"/>
+                            <path d="M11.5 7C11.5 7.41421 11.8358 7.75 12.25 7.75C12.6642 7.75 13 7.41421 13 7C13 6.58579 12.6642 6.25 12.25 6.25C11.8358 6.25 11.5 6.58579 11.5 7Z" fill="#C4C6CC"/>
+                            <path d="M2.5 2.5C2.5 2.91421 2.83579 3.25 3.25 3.25C3.66421 3.25 4 2.91421 4 2.5C4 2.08579 3.66421 1.75 3.25 1.75C2.83579 1.75 2.5 2.08579 2.5 2.5Z" fill="#C4C6CC"/>
+                            <path d="M10 2.5C10 2.91421 10.3358 3.25 10.75 3.25C11.1642 3.25 11.5 2.91421 11.5 2.5C11.5 2.08579 11.1642 1.75 10.75 1.75C10.3358 1.75 10 2.08579 10 2.5Z" fill="#C4C6CC"/>
+                            <path d="M10 11.5C10 11.9142 10.3358 12.25 10.75 12.25C11.1642 12.25 11.5 11.9142 11.5 11.5C11.5 11.0858 11.1642 10.75 10.75 10.75C10.3358 10.75 10 11.0858 10 11.5Z" fill="#C4C6CC"/>
+                            <path d="M2.5 11.5C2.5 11.9142 2.83579 12.25 3.25 12.25C3.66421 12.25 4 11.9142 4 11.5C4 11.0858 3.66421 10.75 3.25 10.75C2.83579 10.75 2.5 11.0858 2.5 11.5Z" fill="#C4C6CC"/>
+                        </svg>
+                    </div>
+
+                    {/* 分页 */}
+                    <div className="table-pagination">
+                        <div className="pagination-info">
+                            <span>共计 {totalItems} 条</span>
+                            <span>每页</span>
+                            <select className="page-size-select">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>条</span>
+                        </div>
+                        <div className="pagination-controls">
+                            <button className="pagination-btn" disabled={currentPage === 1}>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M10 12L6 8L10 4" stroke="#979BA5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </button>
+                            <button className={`pagination-btn ${currentPage === 1 ? 'active' : ''}`}>1</button>
+                            <button className={`pagination-btn ${currentPage === 2 ? 'active' : ''}`}>2</button>
+                            <button className={`pagination-btn ${currentPage === 3 ? 'active' : ''}`}>3</button>
+                            <button className={`pagination-btn ${currentPage === 4 ? 'active' : ''}`}>4</button>
+                            <button className={`pagination-btn ${currentPage === 5 ? 'active' : ''}`}>5</button>
+                            <button className="pagination-btn">...</button>
+                            <button className="pagination-btn">20</button>
+                            <button className="pagination-btn" disabled={currentPage === 20}>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M6 4L10 8L6 12" stroke="#979BA5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 渲染应用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Table />);
+    </script>
+</body>
+</html>
+

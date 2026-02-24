@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2025-12-18 08:35:58",
+    "level": "info",
+    "file": "http/handler.go:436",
+    "message": "[query_ts] /query/ts, header: map[Accept:[*/*] Accept-Encoding:[gzip, deflate] Bk-Query-Source:[backend] Connection:[keep-alive] Content-Length:[856] Content-Type:[application/json] Traceparent:[00-da98e8dfa70b2c6abe138aff7cab21e6-db61be45470b133b-00] User-Agent:[python-requests/2.32.5] X-Bk-Scope-Space-Uid:[bkcc__7] X-Bk-Tenant-Id:[system]], data: {\"space_uid\":\"bkcc__7\",\"query_list\":[{\"field_name\":\"recv_data_bytes\",\"is_regexp\":false,\"function\":[{\"method\":\"sum\"}],\"time_aggregation\":{\"function\":\"rate\",\"window\":\"1m\"},\"is_dom_sampled\":false,\"reference_name\":\"a\",\"conditions\":{\"field_list\":[{\"field_name\":\"bcs_cluster_id\",\"value\":[\"BCS-K8S-90002\"],\"op\":\"contains\"},{\"field_name\":\"module\",\"value\":[\"data\"],\"op\":\"contains\"},{\"field_name\":\"namespace\",\"value\":[\"ieg-blueking-gse-data-tglog\"],\"op\":\"contains\"}],\"condition_list\":[\"and\",\"and\"]},\"keep_columns\":[\"_time\",\"a\"],\"query_string\":\"\",\"sql\":\"\",\"is_prefix\":false}],\"metric_merge\":\"a\",\"start_time\":\"1765931700\",\"end_time\":\"1765931730\",\"step\":\"30s\",\"timezone\":\"Asia/Shanghai\",\"instant\":false,\"not_time_align\":false}",
+    "serverIp": "9.136.132.152",
+    "pod": "bk-datalink-unify-query-564979b65f-7np94"
+  },
+  {
+    "timestamp": "2025-12-18 08:35:58",
+    "level": "info",
+    "file": "curl/curl.go:101",
+    "message": "[http_curl] POST [http://bkapi.bkop.woa.com/api/bkbase-query/prod/v3/queryengine/query_sync] body: {\"bk_app_code\":\"bk_monitorv3\",\"bk_username\":\"admin\",\"bkdata_authentication_method\":\"user\",\"bkdata_data_token\":\"\",\"prefer_storage\":\"vm\",\"sql\":\"{\\\"bk_biz_id\\\":\\\"7\\\",\\\"influx_compatible\\\":true,\\\"use_native_or\\\":true,\\\"api_type\\\":\\\"query_range\\\",\\\"cluster_name\\\":\\\"monitor-op5\\\",\\\"api_params\\\":{\\\"query\\\":\\\"sum(rate(a[1m] offset -29s999ms))\\\",\\\"start\\\":1765931700,\\\"end\\\":1765931730,\\\"step\\\":30,\\\"nocache\\\":0},\\\"result_table_list\\\":[\\\"2_vm_7_bkmonitor_time_series_1573666\\\"],\\\"metric_filter_condition\\\":{\\\"a\\\":\\\"bcs_cluster_id=\\\\\\\"BCS-K8S-90002\\\\\\\", module=\\\\\\\"data\\\\\\\", namespace=\\\\\\\"ieg-blueking-gse-data-tglog\\\\\\\", result_table_id=\\\\\\\"2_vm_7_bkmonitor_time_series_1573666\\\\\\\", __name__=\\\\\\\"recv_data_bytes_value\\\\\\\"\\\"}}\"}",
+    "serverIp": "9.136.132.152",
+    "pod": "bk-datalink-unify-query-564979b65f-7np94"
+  },
+  {
+    "timestamp": "2025-12-18 08:36:10",
+    "level": "warn",
+    "file": "middleware/metadata.go:73",
+    "message": "[query_ts] 慢查询 11.127967267s",
+    "serverIp": "9.136.132.152",
+    "pod": "bk-datalink-unify-query-564979b65f-7np94"
+  },
+  {
+    "timestamp": "2025-12-18 08:36:11",
+    "level": "info",
+    "file": "http/handler.go:436",
+    "message": "[query_ts] /query/ts, header: map[Accept:[*/*] Accept-Encoding:[gzip, deflate] Bk-Query-Source:[backend] Connection:[keep-alive] Content-Length:[856] Content-Type:[application/json] Traceparent:[00-da98e8dfa70b2c6abe138aff7cab21e6-3ba01bb398cd3f19-00] User-Agent:[python-requests/2.32.5] X-Bk-Scope-Space-Uid:[bkcc__7] X-Bk-Tenant-Id:[system]], data: {\"space_uid\":\"bkcc__7\",\"query_list\":[{\"field_name\":\"recv_data_bytes\",\"is_regexp\":false,\"function\":[{\"method\":\"sum\"}],\"time_aggregation\":{\"function\":\"rate\",\"window\":\"1m\"},\"is_dom_sampled\":false,\"reference_name\":\"a\",\"conditions\":{\"field_list\":[{\"field_name\":\"bcs_cluster_id\",\"value\":[\"BCS-K8S-90002\"],\"op\":\"contains\"},{\"field_name\":\"module\",\"value\":[\"data\"],\"op\":\"contains\"},{\"field_name\":\"namespace\",\"value\":[\"ieg-blueking-gse-data-tglog\"],\"op\":\"contains\"}],\"condition_list\":[\"and\",\"and\"]},\"keep_columns\":[\"_time\",\"a\"],\"query_string\":\"\",\"sql\":\"\",\"is_prefix\":false}],\"metric_merge\":\"a\",\"start_time\":\"1765413300\",\"end_time\":\"1765413330\",\"step\":\"30s\",\"timezone\":\"Asia/Shanghai\",\"instant\":false,\"not_time_align\":false}",
+    "serverIp": "30.167.61.105",
+    "pod": "bk-datalink-unify-query-564979b65f-r68dm"
+  },
+  {
+    "timestamp": "2025-12-18 08:36:11",
+    "level": "info",
+    "file": "curl/curl.go:101",
+    "message": "[http_curl] POST [http://bkapi.bkop.woa.com/api/bkbase-query/prod/v3/queryengine/query_sync] body: {\"bk_app_code\":\"bk_monitorv3\",\"bk_username\":\"admin\",\"bkdata_authentication_method\":\"user\",\"bkdata_data_token\":\"\",\"prefer_storage\":\"vm\",\"sql\":\"{\\\"bk_biz_id\\\":\\\"7\\\",\\\"influx_compatible\\\":true,\\\"use_native_or\\\":true,\\\"api_type\\\":\\\"query_range\\\",\\\"cluster_name\\\":\\\"monitor-op5\\\",\\\"api_params\\\":{\\\"query\\\":\\\"sum(rate(a[1m] offset -29s999ms))\\\",\\\"start\\\":1765413300,\\\"end\\\":1765413330,\\\"step\\\":30,\\\"nocache\\\":0},\\\"result_table_list\\\":[\\\"2_vm_7_bkmonitor_time_series_1573666\\\"],\\\"metric_filter_condition\\\":{\\\"a\\\":\\\"bcs_cluster_id=\\\\\\\"BCS-K8S-90002\\\\\\\", module=\\\\\\\"data\\\\\\\", namespace=\\\\\\\"ieg-blueking-gse-data-tglog\\\\\\\", result_table_id=\\\\\\\"2_vm_7_bkmonitor_time_series_1573666\\\\\\\", __name__=\\\\\\\"recv_data_bytes_value\\\\\\\"\\\"}}\"}",
+    "serverIp": "30.167.61.105",
+    "pod": "bk-datalink-unify-query-564979b65f-r68dm"
+  },
+  {
+    "timestamp": "2025-12-18 08:36:11",
+    "level": "error",
+    "file": "victoriaMetrics/instance.go:207",
+    "message": "查询异常 VictoriaMetrics服务端samples超限，请减少查询的时间范围: error occured during search: cannot fetch query results from vmstorage nodes: cannot perform search on vmstorage monitor-op5-vmstorage-0.ieg-bkbase-vm-bkop.svc.cluster.local.:8401: cannot execute funcName=\"search_v7\" on vmstorage \"9.165.238.75:8401\": cannot process MetricBlock #131769: cannot select more than -search.maxSamplesPerQuery=5000000000 samples; possible solutions: increase the -search.maxSamplesPerQuery; reduce time range for the query; use more specific label filters in order to select fewer series",
+    "serverIp": "30.167.61.105",
+    "pod": "bk-datalink-unify-query-564979b65f-r68dm"
+  }
+]
+
+

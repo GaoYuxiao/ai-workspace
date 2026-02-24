@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUM 应用管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <style>
+        .tab-active { border-bottom: 2px solid #3B82F6; color: #3B82F6; }
+        .modal-overlay { background: rgba(0, 0, 0, 0.5); }
+        .code-block { background: #1e1e1e; color: #d4d4d4; }
+        .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; }
+        .status-enabled { background: #DEF7EC; color: #03543F; }
+        .status-disabled { background: #FDE8E8; color: #9B1C1C; }
+        .threshold-good { background: #DEF7EC; color: #03543F; }
+        .threshold-needs { background: #FEF3C7; color: #92400E; }
+        .threshold-poor { background: #FDE8E8; color: #9B1C1C; }
+        .collection-card { transition: all 0.2s; }
+        .collection-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 顶部导航 -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center h-14">
+                <div class="flex items-center space-x-2">
+                    <span class="mdi mdi-monitor-dashboard text-2xl text-blue-500"></span>
+                    <span class="font-semibold text-lg">RUM 监控平台</span>
+                </div>
+                <!-- 业务选择器 -->
+                <div class="ml-4 flex items-center text-sm">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <div class="flex items-center px-3 py-1 bg-blue-50 rounded-lg text-blue-700 cursor-pointer hover:bg-blue-100">
+                        <span class="mdi mdi-office-building mr-1"></span>
+                        <span>[2] 蓝鲸</span>
+                        <span class="mdi mdi-chevron-down ml-1"></span>
+                    </div>
+                </div>
+                <div class="ml-8 flex space-x-6 text-sm">
+                    <a href="#" class="text-blue-500 font-medium">应用管理</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900">数据概览</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900">性能分析</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900">错误追踪</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- 应用列表视图 -->
+        <div id="app-list-view">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900">应用管理</h1>
+                    <p class="text-sm text-gray-500 mt-1">当前业务：蓝鲸 | 管理和配置 RUM 监控应用</p>
+                </div>
+                <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                    <span class="mdi mdi-plus"></span>
+                    <span>新建应用</span>
+                </button>
+            </div>
+
+            <!-- 搜索和筛选 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1 relative">
+                        <span class="mdi mdi-magnify absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
+                        <input type="text" placeholder="搜索应用名称..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                    <select class="border rounded-lg px-4 py-2 text-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">全部类型</option>
+                        <option value="web">Web 应用</option>
+                        <option value="ios">iOS 应用</option>
+                        <option value="android">Android 应用</option>
+                        <option value="miniprogram">小程序</option>
+                    </select>
+                    <select class="border rounded-lg px-4 py-2 text-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">全部状态</option>
+                        <option value="enabled">已启用</option>
+                        <option value="disabled">已停用</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 应用列表表格 -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">应用名称</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">类型</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Token</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">状态</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">负责人</th>
+                            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">更新时间</th>
+                            <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50 cursor-pointer" onclick="showAppConfig('官网首页')">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <span class="mdi mdi-web text-xl text-blue-500 mr-3"></span>
+                                    <div>
+                                        <div class="font-medium text-gray-900">官网首页</div>
+                                        <div class="text-sm text-gray-500">www.example.com</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4"><span class="tag bg-blue-100 text-blue-800">Web</span></td>
+                            <td class="px-6 py-4"><code class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">rum_a1b2c3...****</code></td>
+                            <td class="px-6 py-4"><span class="tag status-enabled"><span class="mdi mdi-check-circle mr-1"></span>已启用</span></td>
+                            <td class="px-6 py-4 text-gray-600">admin, dev</td>
+                            <td class="px-6 py-4 text-gray-500 text-sm">2026-02-05 10:30</td>
+                            <td class="px-6 py-4 text-right">
+                                <button class="text-blue-500 hover:text-blue-700 mr-3" onclick="event.stopPropagation(); showAppConfig('官网首页')"><span class="mdi mdi-cog"></span> 配置</button>
+                                <button class="text-red-500 hover:text-red-700" onclick="event.stopPropagation(); confirmDelete('官网首页')"><span class="mdi mdi-delete"></span> 删除</button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 cursor-pointer" onclick="showAppConfig('移动端 App')">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <span class="mdi mdi-apple text-xl text-gray-700 mr-3"></span>
+                                    <div>
+                                        <div class="font-medium text-gray-900">移动端 App</div>
+                                        <div class="text-sm text-gray-500">com.example.app</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4"><span class="tag bg-gray-100 text-gray-800">iOS</span></td>
+                            <td class="px-6 py-4"><code class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">rum_e5f6g7...****</code></td>
+                            <td class="px-6 py-4"><span class="tag status-enabled"><span class="mdi mdi-check-circle mr-1"></span>已启用</span></td>
+                            <td class="px-6 py-4 text-gray-600">mobile_team</td>
+                            <td class="px-6 py-4 text-gray-500 text-sm">2026-02-04 15:20</td>
+                            <td class="px-6 py-4 text-right">
+                                <button class="text-blue-500 hover:text-blue-700 mr-3" onclick="event.stopPropagation(); showAppConfig('移动端 App')"><span class="mdi mdi-cog"></span> 配置</button>
+                                <button class="text-red-500 hover:text-red-700" onclick="event.stopPropagation(); confirmDelete('移动端 App')"><span class="mdi mdi-delete"></span> 删除</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="px-6 py-4 border-t flex items-center justify-between">
+                    <div class="text-sm text-gray-500">共 2 个应用</div>
+                    <div class="flex items-center space-x-2">
+                        <button class="px-3 py-1 border rounded text-gray-400 cursor-not-allowed" disabled>上一页</button>
+                        <button class="px-3 py-1 border rounded bg-blue-500 text-white">1</button>
+                        <button class="px-3 py-1 border rounded text-gray-400 cursor-not-allowed" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 应用配置视图 -->
+        <div id="app-config-view" class="hidden">
+            <div class="flex items-center text-sm text-gray-500 mb-4">
+                <a href="#" onclick="showAppList()" class="hover:text-blue-500">应用管理</a>
+                <span class="mdi mdi-chevron-right mx-2"></span>
+                <span id="current-app-name" class="text-gray-900">官网首页</span>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="mdi mdi-web text-3xl text-blue-500 mr-4"></span>
+                        <div>
+                            <h1 class="text-xl font-semibold text-gray-900">官网首页</h1>
+                            <div class="flex items-center mt-1 text-sm text-gray-500">
+                                <span class="tag bg-blue-100 text-blue-800 mr-2">Web</span>
+                                <span>Token: rum_a1b2c3d4e5f6g7h8</span>
+                                <button class="ml-2 text-blue-500 hover:text-blue-700" title="复制 Token"><span class="mdi mdi-content-copy"></span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="tag status-enabled text-sm"><span class="mdi mdi-check-circle mr-1"></span>已启用</span>
+                        <button class="text-gray-500 hover:text-gray-700"><span class="mdi mdi-refresh"></span> 重置 Token</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 导航 - 7 个 Tab -->
+            <div class="bg-white rounded-lg shadow-sm mb-4">
+                <div class="border-b">
+                    <nav class="flex space-x-8 px-6" id="config-tabs">
+                        <button class="py-4 px-1 text-sm font-medium tab-active" onclick="switchTab('basic')">
+                            <span class="mdi mdi-information-outline mr-1"></span>基本信息
+                        </button>
+                        <button class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('sdk')">
+                            <span class="mdi mdi-code-tags mr-1"></span>SDK 接入
+                        </button>
+                        <button class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('collection')">
+                            <span class="mdi mdi-database-outline mr-1"></span>数据采集
+                        </button>
+                        <button class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('rules')">
+                            <span class="mdi mdi-sitemap mr-1"></span>页面规则
+                        </button>
+                        <button class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('threshold')">
+                            <span class="mdi mdi-speedometer mr-1"></span>阈值告警
+                        </button>
+                        <button class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('scoring')">
+                            <span class="mdi mdi-star-outline mr-1"></span>体验评分
+                        </button>
+                        <button class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('advanced')">
+                            <span class="mdi mdi-cog-outline mr-1"></span>高级设置
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="p-6">
+                    <!-- 基本信息 Tab -->
+                    <div id="tab-basic" class="tab-content">
+                        <form class="space-y-6">
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">应用名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" value="官网首页" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">应用别名</label>
+                                    <input type="text" value="homepage" placeholder="英文标识" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">应用类型</label>
+                                    <select disabled class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed">
+                                        <option value="web" selected>Web 应用</option>
+                                    </select>
+                                    <p class="text-xs text-gray-400 mt-1">应用类型创建后不可修改</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">负责人 <span class="text-red-500">*</span></label>
+                                    <div class="flex flex-wrap items-center gap-2 p-2 border rounded-lg min-h-[42px]">
+                                        <span class="tag bg-blue-100 text-blue-800">admin <span class="mdi mdi-close ml-1 cursor-pointer"></span></span>
+                                        <span class="tag bg-blue-100 text-blue-800">dev <span class="mdi mdi-close ml-1 cursor-pointer"></span></span>
+                                        <input type="text" placeholder="添加负责人..." class="flex-1 min-w-[120px] outline-none text-sm">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">域名白名单 <span class="text-red-500">*</span></label>
+                                <div class="space-y-2">
+                                    <div class="flex items-center space-x-2">
+                                        <input type="text" value="*.example.com" class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <button type="button" class="text-red-500 hover:text-red-700 p-2"><span class="mdi mdi-delete"></span></button>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="text" value="localhost" class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <button type="button" class="text-red-500 hover:text-red-700 p-2"><span class="mdi mdi-delete"></span></button>
+                                    </div>
+                                    <button type="button" class="text-blue-500 hover:text-blue-700 text-sm flex items-center"><span class="mdi mdi-plus mr-1"></span>添加域名</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">应用状态</label>
+                                    <div class="flex items-center space-x-4">
+                                        <label class="flex items-center"><input type="radio" name="status" value="enabled" checked class="mr-2 text-blue-500"><span>启用</span></label>
+                                        <label class="flex items-center"><input type="radio" name="status" value="disabled" class="mr-2"><span>停用</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">应用描述</label>
+                                <textarea rows="3" placeholder="请输入应用描述..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none">这是官网首页的 RUM 监控应用</textarea>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- SDK 接入 Tab -->
+                    <div id="tab-sdk" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center mr-2">1</span>
+                                    选择接入方式
+                                </h3>
+                                <div class="flex space-x-4">
+                                    <label class="flex-1 border-2 border-blue-500 rounded-lg p-4 cursor-pointer bg-blue-50">
+                                        <input type="radio" name="sdk-type" value="cdn" checked class="hidden">
+                                        <div class="flex items-center mb-2">
+                                            <span class="mdi mdi-code-tags text-xl text-blue-500 mr-2"></span>
+                                            <span class="font-medium">CDN Script</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500">通过 &lt;script&gt; 标签引入</p>
+                                    </label>
+                                    <label class="flex-1 border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-gray-300">
+                                        <input type="radio" name="sdk-type" value="npm" class="hidden">
+                                        <div class="flex items-center mb-2">
+                                            <span class="mdi mdi-npm text-xl text-red-500 mr-2"></span>
+                                            <span class="font-medium">NPM 包</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500">通过包管理器安装</p>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center mr-2">2</span>
+                                    配置选项
+                                </h3>
+                                <div class="grid grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-600 mb-1">应用版本</label>
+                                        <input type="text" value="1.0.0" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-600 mb-1">环境标识</label>
+                                        <select class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                            <option value="production">production</option>
+                                            <option value="staging">staging</option>
+                                            <option value="testing">testing</option>
+                                            <option value="development">development</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-600 mb-1">采样率 (%)</label>
+                                        <input type="number" value="100" min="0" max="100" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-600 mb-2">采集项开关</label>
+                                    <div class="flex flex-wrap gap-4">
+                                        <label class="flex items-center"><input type="checkbox" checked class="mr-2 rounded text-blue-500"><span class="text-sm">Web Vitals</span></label>
+                                        <label class="flex items-center"><input type="checkbox" checked class="mr-2 rounded text-blue-500"><span class="text-sm">JS 错误</span></label>
+                                        <label class="flex items-center"><input type="checkbox" checked class="mr-2 rounded text-blue-500"><span class="text-sm">资源加载</span></label>
+                                        <label class="flex items-center"><input type="checkbox" checked class="mr-2 rounded text-blue-500"><span class="text-sm">API 请求</span></label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center mr-2">3</span>
+                                    复制代码
+                                    <button class="ml-auto text-blue-500 hover:text-blue-700 text-sm flex items-center"><span class="mdi mdi-content-copy mr-1"></span>复制代码</button>
+                                </h3>
+                                <div class="code-block rounded-lg p-4 overflow-x-auto text-sm">
+<pre><code><span class="text-gray-500">&lt;!-- 引入 RUM SDK --&gt;</span>
+<span class="text-blue-400">&lt;script</span> <span class="text-yellow-300">src</span>=<span class="text-green-300">"https://static.example.com/rum-sdk/v1.0.0/rum.min.js"</span><span class="text-blue-400">&gt;&lt;/script&gt;</span>
+<span class="text-blue-400">&lt;script&gt;</span>
+  <span class="text-purple-300">window</span>.<span class="text-yellow-200">BKRUM</span> && <span class="text-purple-300">window</span>.<span class="text-yellow-200">BKRUM</span>.<span class="text-blue-300">init</span>({
+    <span class="text-yellow-300">token</span>: <span class="text-green-300">'rum_a1b2c3d4e5f6g7h8'</span>,
+    <span class="text-yellow-300">reportUrl</span>: <span class="text-green-300">'https://rum.example.com/api/v1/report'</span>,
+    <span class="text-yellow-300">appVersion</span>: <span class="text-green-300">'1.0.0'</span>,
+    <span class="text-yellow-300">environment</span>: <span class="text-green-300">'production'</span>,
+    <span class="text-yellow-300">sampleRate</span>: <span class="text-orange-300">100</span>
+  });
+<span class="text-blue-400">&lt;/script&gt;</span></code></pre>
+                                </div>
+                            </div>
+
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center mr-2">4</span>
+                                    验证接入
+                                </h3>
+                                <div class="flex items-center space-x-4">
+                                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                                        <span class="mdi mdi-radar"></span>
+                                        <span>检测数据上报</span>
+                                    </button>
+                                    <div class="flex items-center text-green-600">
+                                        <span class="mdi mdi-check-circle text-xl mr-2"></span>
+                                        <span>已检测到数据上报，接入成功！</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 多环境配置 P1 -->
+                            <div class="border rounded-lg p-4 border-blue-200 bg-blue-50">
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-layers-outline text-blue-500 mr-2"></span>
+                                    多环境配置
+                                    <span class="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">P1</span>
+                                </h3>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded-lg p-3 flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <span class="tag bg-green-100 text-green-800">production</span>
+                                            <span class="text-sm text-gray-600 ml-2">采样率: 100%</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-blue-500 hover:text-blue-700 text-sm">编辑</button>
+                                            <button class="text-red-500 hover:text-red-700 text-sm">删除</button>
+                                        </div>
+                                    </div>
+                                    <button class="text-blue-500 hover:text-blue-700 text-sm flex items-center"><span class="mdi mdi-plus mr-1"></span>添加环境</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 数据采集 Tab（合并了采样和过滤） -->
+                    <div id="tab-collection" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <!-- 采集项配置 -->
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-database-check mr-2 text-blue-500"></span>
+                                    采集项配置
+                                    <span class="ml-2 text-sm text-gray-500 font-normal">控制各类数据的采集开关和采样率</span>
+                                </h3>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <!-- 页面访问 -->
+                                    <div class="collection-card border rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-eye text-xl text-blue-500 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">页面访问</div>
+                                                    <div class="text-sm text-gray-500">PV、UV 统计，URL、Referrer、停留时长</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">采样率:</span>
+                                                    <input type="number" value="100" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center">
+                                                    <span class="text-sm text-gray-500">%</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Web Vitals -->
+                                    <div class="collection-card border rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-speedometer text-xl text-green-500 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">Web Vitals</div>
+                                                    <div class="text-sm text-gray-500">LCP、FID、CLS、INP、TTFB、FCP 核心性能指标</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">采样率:</span>
+                                                    <input type="number" value="100" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center">
+                                                    <span class="text-sm text-gray-500">%</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- JS 错误 -->
+                                    <div class="collection-card border rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-bug text-xl text-red-500 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">JS 错误</div>
+                                                    <div class="text-sm text-gray-500">JavaScript 运行时错误、Promise 异常</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">采样率:</span>
+                                                    <input type="number" value="100" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center">
+                                                    <span class="text-sm text-gray-500">%</span>
+                                                    <span class="text-xs text-orange-500">(建议100%)</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 资源加载 -->
+                                    <div class="collection-card border rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-file-image text-xl text-purple-500 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">资源加载</div>
+                                                    <div class="text-sm text-gray-500">静态资源加载性能，JS/CSS/图片/字体等</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">采样率:</span>
+                                                    <input type="number" value="50" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center">
+                                                    <span class="text-sm text-gray-500">%</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- API 请求 -->
+                                    <div class="collection-card border rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-api text-xl text-cyan-500 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">API 请求</div>
+                                                    <div class="text-sm text-gray-500">XHR/Fetch 请求监控，URL、方法、状态码、耗时</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">采样率:</span>
+                                                    <input type="number" value="100" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center">
+                                                    <span class="text-sm text-gray-500">%</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!-- API 请求详细配置 -->
+                                        <div class="pl-8 border-l-2 border-gray-200 ml-3 space-y-3">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                                    <input type="checkbox" class="mr-2 rounded text-blue-500">
+                                                    <span class="text-sm text-gray-600">采集请求头</span>
+                                                </label>
+                                                <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                                    <input type="checkbox" class="mr-2 rounded text-blue-500">
+                                                    <span class="text-sm text-gray-600">采集响应头</span>
+                                                </label>
+                                                <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                                    <input type="checkbox" class="mr-2 rounded text-blue-500">
+                                                    <span class="text-sm text-gray-600">采集请求体</span>
+                                                    <span class="text-xs text-orange-500 ml-1">(需配合脱敏)</span>
+                                                </label>
+                                                <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                                    <input type="checkbox" class="mr-2 rounded text-blue-500">
+                                                    <span class="text-sm text-gray-600">采集响应体</span>
+                                                    <span class="text-xs text-orange-500 ml-1">(需配合脱敏)</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <label class="text-sm text-gray-600">慢请求阈值:</label>
+                                                <input type="number" value="3000" class="w-24 px-3 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                                <span class="text-sm text-gray-500">ms</span>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <label class="text-sm text-gray-600">请求体大小限制:</label>
+                                                <input type="number" value="10" class="w-20 px-3 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                                <span class="text-sm text-gray-500">KB</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 长任务 -->
+                                    <div class="collection-card border rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-clock-alert text-xl text-yellow-500 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-900">长任务</div>
+                                                    <div class="text-sm text-gray-500">Long Task 监控，执行时间超过 50ms 的任务</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">采样率:</span>
+                                                    <input type="number" value="50" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center">
+                                                    <span class="text-sm text-gray-500">%</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 会话回放（可选） -->
+                                    <div class="collection-card border rounded-lg p-4 bg-gray-50">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <span class="mdi mdi-video text-xl text-gray-400 mr-3"></span>
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-500">会话回放</div>
+                                                    <div class="text-sm text-gray-400">Session Replay 录制，DOM 变更、用户操作录制</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-400">采样率:</span>
+                                                    <input type="number" value="0" min="0" max="100" class="w-16 px-2 py-1 border rounded text-sm text-center" disabled>
+                                                    <span class="text-sm text-gray-400">%</span>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 页面规则 Tab（独立） -->
+                    <div id="tab-rules" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <!-- 页面分组规则（URL 聚合） -->
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-sitemap mr-2 text-blue-500"></span>
+                                    页面分组规则
+                                    <span class="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">重要</span>
+                                    <span class="ml-2 text-sm text-gray-500 font-normal">将动态 URL 聚合为统一的页面名称，提高数据分析质量</span>
+                                </h3>
+
+                                <!-- 自动参数化配置 -->
+                                <div class="border rounded-lg p-4 mb-4">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                        <span class="mdi mdi-auto-fix mr-2 text-green-500"></span>
+                                        自动参数化
+                                        <span class="ml-2 text-xs text-gray-400 font-normal">自动识别并替换 URL 中的动态参数</span>
+                                    </h4>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                            <input type="checkbox" checked class="mr-3 rounded text-blue-500">
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-700">纯数字参数化</div>
+                                                <div class="text-xs text-gray-500">/user/<span class="text-blue-500">12345</span> → /user/<span class="text-green-500">:number</span></div>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                            <input type="checkbox" checked class="mr-3 rounded text-blue-500">
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-700">UUID 参数化</div>
+                                                <div class="text-xs text-gray-500">/doc/<span class="text-blue-500">a1b2-c3d4-...</span> → /doc/<span class="text-green-500">:uuid</span></div>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                            <input type="checkbox" checked class="mr-3 rounded text-blue-500">
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-700">Hash ID 参数化</div>
+                                                <div class="text-xs text-gray-500">/order/<span class="text-blue-500">abc123xyz</span> → /order/<span class="text-green-500">:id</span></div>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                            <input type="checkbox" class="mr-3 rounded text-blue-500">
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-700">忽略所有 Query 参数</div>
+                                                <div class="text-xs text-gray-500">?page=1&size=10 不参与分组</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- 自定义分组规则 -->
+                                <div class="border rounded-lg p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-sm font-medium text-gray-700 flex items-center">
+                                            <span class="mdi mdi-pencil-ruler mr-2 text-orange-500"></span>
+                                            自定义分组规则
+                                            <span class="ml-2 text-xs text-gray-400 font-normal">优先级高于自动参数化</span>
+                                        </h4>
+                                        <button class="text-blue-500 hover:text-blue-700 text-sm flex items-center">
+                                            <span class="mdi mdi-plus mr-1"></span>添加规则
+                                        </button>
+                                    </div>
+                                    <div class="border rounded-lg overflow-hidden">
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="bg-gray-50 border-b">
+                                                    <th class="text-left px-4 py-2 text-gray-600">URL 匹配模式</th>
+                                                    <th class="text-left px-4 py-2 text-gray-600">页面名称</th>
+                                                    <th class="text-right px-4 py-2 text-gray-600 w-24">操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y">
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-4 py-3"><code class="bg-gray-100 px-2 py-1 rounded text-xs">/user/*/profile</code></td>
+                                                    <td class="px-4 py-3 text-gray-700">用户详情页</td>
+                                                    <td class="px-4 py-3 text-right">
+                                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><span class="mdi mdi-pencil"></span></button>
+                                                        <button class="text-red-500 hover:text-red-700"><span class="mdi mdi-delete"></span></button>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-4 py-3"><code class="bg-gray-100 px-2 py-1 rounded text-xs">/order/*/detail</code></td>
+                                                    <td class="px-4 py-3 text-gray-700">订单详情页</td>
+                                                    <td class="px-4 py-3 text-right">
+                                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><span class="mdi mdi-pencil"></span></button>
+                                                        <button class="text-red-500 hover:text-red-700"><span class="mdi mdi-delete"></span></button>
+                                                    </td>
+                                                </tr>
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-4 py-3"><code class="bg-gray-100 px-2 py-1 rounded text-xs">/product/*</code></td>
+                                                    <td class="px-4 py-3 text-gray-700">商品详情页</td>
+                                                    <td class="px-4 py-3 text-right">
+                                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><span class="mdi mdi-pencil"></span></button>
+                                                        <button class="text-red-500 hover:text-red-700"><span class="mdi mdi-delete"></span></button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
+                                        <div class="font-medium text-gray-700 mb-1">匹配语法说明：</div>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <span><code class="bg-gray-200 px-1 rounded">*</code> 匹配单段路径</span>
+                                            <span><code class="bg-gray-200 px-1 rounded">**</code> 匹配多段路径</span>
+                                            <span><code class="bg-gray-200 px-1 rounded">?key=*</code> 匹配参数</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Query 参数配置 -->
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                        <span class="mdi mdi-help-circle mr-2 text-purple-500"></span>
+                                        Query 参数处理
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-sm text-gray-600 w-28">参数处理策略:</span>
+                                            <label class="flex items-center"><input type="radio" name="query-mode" class="mr-2" checked><span class="text-sm">全部忽略</span></label>
+                                            <label class="flex items-center"><input type="radio" name="query-mode" class="mr-2"><span class="text-sm">白名单模式</span></label>
+                                            <label class="flex items-center"><input type="radio" name="query-mode" class="mr-2"><span class="text-sm">黑名单模式</span></label>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-sm text-gray-600 w-28">参与分组的参数:</span>
+                                            <div class="flex flex-wrap gap-2 flex-1">
+                                                <span class="tag bg-purple-100 text-purple-800">tab <span class="mdi mdi-close ml-1 cursor-pointer"></span></span>
+                                                <span class="tag bg-purple-100 text-purple-800">type <span class="mdi mdi-close ml-1 cursor-pointer"></span></span>
+                                                <input type="text" placeholder="添加参数名..." class="px-2 py-1 border rounded text-sm w-32">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-sm text-gray-600 w-28">需要脱敏的参数:</span>
+                                            <div class="flex flex-wrap gap-2 flex-1">
+                                                <span class="tag bg-red-100 text-red-800">token <span class="mdi mdi-close ml-1 cursor-pointer"></span></span>
+                                                <span class="tag bg-red-100 text-red-800">password <span class="mdi mdi-close ml-1 cursor-pointer"></span></span>
+                                                <input type="text" placeholder="添加参数名..." class="px-2 py-1 border rounded text-sm w-32">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 过滤规则 -->
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-filter mr-2 text-blue-500"></span>
+                                    过滤规则
+                                    <span class="ml-2 text-sm text-gray-500 font-normal">过滤无效数据和噪音数据，提高数据质量</span>
+                                </h3>
+
+                                <!-- URL 过滤 -->
+                                <div class="border rounded-lg p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-700 flex items-center">
+                                            <span class="mdi mdi-link mr-2 text-cyan-500"></span>
+                                            URL 过滤规则
+                                        </h4>
+                                        <button class="text-blue-500 hover:text-blue-700 text-sm flex items-center"><span class="mdi mdi-plus mr-1"></span>添加规则</button>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>排除</option><option>仅包含</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>前缀匹配</option><option>精确匹配</option><option>正则匹配</option></select>
+                                            <input type="text" value="/health*" class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>排除</option><option>仅包含</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>前缀匹配</option><option>精确匹配</option><option>正则匹配</option></select>
+                                            <input type="text" value="/api/rum/report*" class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 错误过滤 -->
+                                <div class="border rounded-lg p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-700 flex items-center">
+                                            <span class="mdi mdi-bug mr-2 text-red-500"></span>
+                                            错误过滤规则
+                                        </h4>
+                                        <button class="text-blue-500 hover:text-blue-700 text-sm flex items-center"><span class="mdi mdi-plus mr-1"></span>添加规则</button>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>错误消息</option><option>错误类型</option><option>来源文件</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>包含</option><option>不包含</option><option>正则匹配</option></select>
+                                            <input type="text" value="Script error." class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>错误消息</option><option>错误类型</option><option>来源文件</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>包含</option><option>不包含</option><option>正则匹配</option></select>
+                                            <input type="text" value="ResizeObserver loop" class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>错误消息</option><option>错误类型</option><option>来源文件</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>包含</option><option>不包含</option><option>正则匹配</option></select>
+                                            <input type="text" value="chrome-extension://" class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        <span class="font-medium">常用过滤规则：</span>
+                                        <span class="ml-2 text-blue-500 cursor-pointer hover:underline">+ Script error</span>
+                                        <span class="ml-2 text-blue-500 cursor-pointer hover:underline">+ ResizeObserver</span>
+                                        <span class="ml-2 text-blue-500 cursor-pointer hover:underline">+ 浏览器插件</span>
+                                    </div>
+                                </div>
+
+                                <!-- API 过滤 -->
+                                <div class="border rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-700 flex items-center">
+                                            <span class="mdi mdi-api mr-2 text-cyan-500"></span>
+                                            API 请求过滤规则
+                                        </h4>
+                                        <button class="text-blue-500 hover:text-blue-700 text-sm flex items-center"><span class="mdi mdi-plus mr-1"></span>添加规则</button>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>排除</option><option>仅包含</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>URL 前缀</option><option>URL 正则</option></select>
+                                            <input type="text" value="/api/heartbeat" class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded">
+                                            <select class="px-2 py-1 border rounded text-sm"><option>排除</option><option>仅包含</option></select>
+                                            <select class="px-2 py-1 border rounded text-sm"><option>URL 前缀</option><option>URL 正则</option></select>
+                                            <input type="text" value="/api/ping" class="flex-1 px-2 py-1 border rounded text-sm">
+                                            <button class="text-red-500 hover:text-red-700 p-1"><span class="mdi mdi-delete"></span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 阈值告警 Tab -->
+                    <div id="tab-threshold" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-speedometer mr-2 text-blue-500"></span>
+                                    Web Vitals 阈值配置
+                                </h3>
+                                <div class="border rounded-lg overflow-hidden">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="bg-gray-50 border-b">
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">指标</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600"><span class="tag threshold-good">良好</span></th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600"><span class="tag threshold-needs">需改进</span></th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600"><span class="tag threshold-poor">差</span></th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">单位</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y">
+                                            <tr>
+                                                <td class="px-4 py-3"><div class="font-medium text-gray-900">LCP</div><div class="text-xs text-gray-500">Largest Contentful Paint</div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="2500" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="4000" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><span class="text-gray-500">> 4000</span></td>
+                                                <td class="px-4 py-3 text-gray-500">ms</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3"><div class="font-medium text-gray-900">FID</div><div class="text-xs text-gray-500">First Input Delay</div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="100" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="300" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><span class="text-gray-500">> 300</span></td>
+                                                <td class="px-4 py-3 text-gray-500">ms</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3"><div class="font-medium text-gray-900">CLS</div><div class="text-xs text-gray-500">Cumulative Layout Shift</div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="0.1" step="0.01" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="0.25" step="0.01" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><span class="text-gray-500">> 0.25</span></td>
+                                                <td class="px-4 py-3 text-gray-500">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3"><div class="font-medium text-gray-900">INP</div><div class="text-xs text-gray-500">Interaction to Next Paint</div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="200" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="500" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><span class="text-gray-500">> 500</span></td>
+                                                <td class="px-4 py-3 text-gray-500">ms</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3"><div class="font-medium text-gray-900">TTFB</div><div class="text-xs text-gray-500">Time to First Byte</div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="800" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="1800" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><span class="text-gray-500">> 1800</span></td>
+                                                <td class="px-4 py-3 text-gray-500">ms</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3"><div class="font-medium text-gray-900">FCP</div><div class="text-xs text-gray-500">First Contentful Paint</div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="1800" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><span class="text-gray-500 mr-1">≤</span><input type="number" value="3000" class="w-20 px-2 py-1 border rounded text-sm"></div></td>
+                                                <td class="px-4 py-3"><span class="text-gray-500">> 3000</span></td>
+                                                <td class="px-4 py-3 text-gray-500">ms</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-chart-line mr-2 text-blue-500"></span>
+                                    业务阈值配置
+                                </h3>
+                                <div class="border rounded-lg overflow-hidden">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="bg-gray-50 border-b">
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">指标</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">警告阈值</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">严重阈值</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">说明</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y">
+                                            <tr>
+                                                <td class="px-4 py-3 font-medium text-gray-900">JS 错误率</td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="1" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="5" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3 text-gray-500 text-sm">错误 PV / 总 PV</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3 font-medium text-gray-900">API 失败率</td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="1" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="5" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3 text-gray-500 text-sm">失败请求 / 总请求</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3 font-medium text-gray-900">资源加载失败率</td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="5" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="10" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3 text-gray-500 text-sm">失败资源 / 总资源</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3 font-medium text-gray-900">慢请求占比</td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="5" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3"><div class="flex items-center"><input type="number" value="15" step="0.1" class="w-16 px-2 py-1 border rounded text-sm"><span class="text-gray-500 ml-1">%</span></div></td>
+                                                <td class="px-4 py-3 text-gray-500 text-sm">慢请求 / 总请求</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- 告警规则 P1 -->
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-bell-alert mr-2 text-blue-500"></span>
+                                    告警规则配置
+                                    <span class="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">P1</span>
+                                    <button class="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm flex items-center"><span class="mdi mdi-plus mr-1"></span>新建告警规则</button>
+                                </h3>
+                                <div class="border rounded-lg overflow-hidden">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="bg-gray-50 border-b">
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">规则名称</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">监控指标</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">触发条件</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">告警级别</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">通知渠道</th>
+                                                <th class="text-left px-4 py-3 text-sm text-gray-600">状态</th>
+                                                <th class="text-right px-4 py-3 text-sm text-gray-600">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y">
+                                            <tr>
+                                                <td class="px-4 py-3 font-medium text-gray-900">JS 错误率告警</td>
+                                                <td class="px-4 py-3 text-gray-600">JS 错误率</td>
+                                                <td class="px-4 py-3 text-gray-600">> 1% 持续 5 分钟</td>
+                                                <td class="px-4 py-3"><span class="tag bg-yellow-100 text-yellow-800">警告</span></td>
+                                                <td class="px-4 py-3"><span class="mdi mdi-wechat text-green-500 mr-1"></span><span class="mdi mdi-email text-blue-500"></span></td>
+                                                <td class="px-4 py-3"><span class="tag status-enabled">已启用</span></td>
+                                                <td class="px-4 py-3 text-right">
+                                                    <button class="text-blue-500 hover:text-blue-700 mr-2">编辑</button>
+                                                    <button class="text-red-500 hover:text-red-700">删除</button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="px-4 py-3 font-medium text-gray-900">LCP 性能告警</td>
+                                                <td class="px-4 py-3 text-gray-600">LCP P75</td>
+                                                <td class="px-4 py-3 text-gray-600">> 4000ms 持续 10 分钟</td>
+                                                <td class="px-4 py-3"><span class="tag bg-red-100 text-red-800">严重</span></td>
+                                                <td class="px-4 py-3"><span class="mdi mdi-wechat text-green-500 mr-1"></span><span class="mdi mdi-email text-blue-500 mr-1"></span><span class="mdi mdi-message-text text-orange-500"></span></td>
+                                                <td class="px-4 py-3"><span class="tag status-enabled">已启用</span></td>
+                                                <td class="px-4 py-3 text-right">
+                                                    <button class="text-blue-500 hover:text-blue-700 mr-2">编辑</button>
+                                                    <button class="text-red-500 hover:text-red-700">删除</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 体验评分 Tab -->
+                    <div id="tab-scoring" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-chart-arc mr-2 text-blue-500"></span>
+                                    Apdex 配置
+                                </h3>
+                                <div class="border rounded-lg p-6">
+                                    <div class="grid grid-cols-2 gap-6 mb-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">页面加载满意阈值 T</label>
+                                            <div class="flex items-center">
+                                                <input type="number" value="2000" class="w-32 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <span class="text-gray-500 ml-2">ms</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">API 请求满意阈值 T</label>
+                                            <div class="flex items-center">
+                                                <input type="number" value="500" class="w-32 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <span class="text-gray-500 ml-2">ms</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Apdex 阈值说明</h4>
+                                        <div class="flex items-center space-x-6 text-sm">
+                                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span><span class="text-gray-600">满意: 响应时间 ≤ T</span></div>
+                                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span><span class="text-gray-600">可容忍: T < 响应时间 ≤ 4T</span></div>
+                                            <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span><span class="text-gray-600">不满意: 响应时间 > 4T</span></div>
+                                        </div>
+                                        <div class="mt-3 text-sm text-gray-500">Apdex = (满意数 + 可容忍数 × 0.5) / 总样本数</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-scale-balance mr-2 text-blue-500"></span>
+                                    综合评分权重配置
+                                    <span class="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">P1</span>
+                                </h3>
+                                <div class="border rounded-lg p-6">
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1"><span class="font-medium text-gray-700">页面性能</span><span class="text-blue-600 font-semibold" id="weight-performance">40%</span></div>
+                                                <p class="text-xs text-gray-500">基于 Web Vitals 的性能得分</p>
+                                            </div>
+                                            <input type="range" min="0" max="100" value="40" class="w-48 h-2 bg-gray-200 rounded-lg cursor-pointer ml-6" oninput="updateWeight(this, 'weight-performance')">
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1"><span class="font-medium text-gray-700">稳定性</span><span class="text-blue-600 font-semibold" id="weight-stability">30%</span></div>
+                                                <p class="text-xs text-gray-500">JS 错误率、API 成功率</p>
+                                            </div>
+                                            <input type="range" min="0" max="100" value="30" class="w-48 h-2 bg-gray-200 rounded-lg cursor-pointer ml-6" oninput="updateWeight(this, 'weight-stability')">
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1"><span class="font-medium text-gray-700">可用性</span><span class="text-blue-600 font-semibold" id="weight-availability">20%</span></div>
+                                                <p class="text-xs text-gray-500">资源加载成功率</p>
+                                            </div>
+                                            <input type="range" min="0" max="100" value="20" class="w-48 h-2 bg-gray-200 rounded-lg cursor-pointer ml-6" oninput="updateWeight(this, 'weight-availability')">
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1"><span class="font-medium text-gray-700">交互体验</span><span class="text-blue-600 font-semibold" id="weight-interaction">10%</span></div>
+                                                <p class="text-xs text-gray-500">交互响应速度、长任务占比</p>
+                                            </div>
+                                            <input type="range" min="0" max="100" value="10" class="w-48 h-2 bg-gray-200 rounded-lg cursor-pointer ml-6" oninput="updateWeight(this, 'weight-interaction')">
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-4 border-t flex items-center justify-between">
+                                        <span class="font-medium text-gray-900">权重合计</span>
+                                        <span class="text-lg font-semibold text-green-600">100%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-star mr-2 text-blue-500"></span>
+                                    评分等级配置
+                                </h3>
+                                <div class="border rounded-lg p-6">
+                                    <div class="grid grid-cols-4 gap-4">
+                                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2"><span class="mdi mdi-star text-white text-2xl"></span></div>
+                                            <div class="font-semibold text-green-700">优秀</div>
+                                            <div class="text-sm text-green-600">90 - 100</div>
+                                        </div>
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2"><span class="mdi mdi-thumb-up text-white text-2xl"></span></div>
+                                            <div class="font-semibold text-blue-700">良好</div>
+                                            <div class="text-sm text-blue-600">75 - 89</div>
+                                        </div>
+                                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                                            <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2"><span class="mdi mdi-alert text-white text-2xl"></span></div>
+                                            <div class="font-semibold text-yellow-700">一般</div>
+                                            <div class="text-sm text-yellow-600">60 - 74</div>
+                                        </div>
+                                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                                            <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2"><span class="mdi mdi-close text-white text-2xl"></span></div>
+                                            <div class="font-semibold text-red-700">较差</div>
+                                            <div class="text-sm text-red-600">0 - 59</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 高级设置 Tab -->
+                    <div id="tab-advanced" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-map mr-2 text-blue-500"></span>
+                                    Source Map 管理
+                                    <span class="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">P1</span>
+                                </h3>
+                                <div class="border rounded-lg p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" checked class="mr-2 rounded text-blue-500">
+                                            <span class="font-medium text-gray-700">开启 Source Map 解析</span>
+                                        </label>
+                                        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                                            <span class="mdi mdi-upload"></span>
+                                            <span>上传 Source Map</span>
+                                        </button>
+                                    </div>
+                                    <div class="border rounded-lg overflow-hidden">
+                                        <table class="w-full">
+                                            <thead>
+                                                <tr class="bg-gray-50 border-b">
+                                                    <th class="text-left px-4 py-3 text-sm text-gray-600">版本号</th>
+                                                    <th class="text-left px-4 py-3 text-sm text-gray-600">文件名</th>
+                                                    <th class="text-left px-4 py-3 text-sm text-gray-600">文件大小</th>
+                                                    <th class="text-left px-4 py-3 text-sm text-gray-600">上传时间</th>
+                                                    <th class="text-right px-4 py-3 text-sm text-gray-600">操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y">
+                                                <tr>
+                                                    <td class="px-4 py-3 font-medium text-gray-900">1.0.0</td>
+                                                    <td class="px-4 py-3 text-gray-600">app.min.js.map</td>
+                                                    <td class="px-4 py-3 text-gray-500">2.3 MB</td>
+                                                    <td class="px-4 py-3 text-gray-500">2026-02-05 10:30</td>
+                                                    <td class="px-4 py-3 text-right">
+                                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><span class="mdi mdi-download"></span></button>
+                                                        <button class="text-red-500 hover:text-red-700"><span class="mdi mdi-delete"></span></button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-4 bg-gray-50 rounded-lg p-4">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-2">CI/CD 自动上传</h4>
+                                        <div class="code-block rounded p-3 text-xs overflow-x-auto">
+<pre><code>curl -X POST 'https://rum.example.com/api/rum/apps/{app_id}/sourcemap/' \
+  -H 'Authorization: Bearer {token}' \
+  -F 'version=1.0.0' \
+  -F 'files=@./dist/app.js.map'</code></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="opacity-60">
+                                <h3 class="font-medium text-gray-900 mb-4 flex items-center">
+                                    <span class="mdi mdi-database-clock mr-2 text-gray-400"></span>
+                                    数据保留策略
+                                    <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">P2 - 待开发</span>
+                                </h3>
+                                <div class="border rounded-lg p-6 bg-gray-50">
+                                    <div class="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-500 mb-2">原始明细数据保留</label>
+                                            <select disabled class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"><option>7 天</option></select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-500 mb-2">聚合统计数据保留</label>
+                                            <select disabled class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"><option>90 天</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 border-t flex items-center justify-end space-x-4">
+                    <button onclick="showAppList()" class="px-6 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition">取消</button>
+                    <button class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">保存配置</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 新建应用 Modal（移除了所属业务字段） -->
+    <div id="create-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="hideCreateModal()"></div>
+        <div class="absolute right-0 top-0 h-full w-[600px] bg-white shadow-xl">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-lg font-semibold">新建应用</h2>
+                <button onclick="hideCreateModal()" class="text-gray-400 hover:text-gray-600"><span class="mdi mdi-close text-xl"></span></button>
+            </div>
+            <div class="p-6 overflow-y-auto" style="height: calc(100% - 140px);">
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center">
+                    <span class="mdi mdi-information text-blue-500 mr-2"></span>
+                    <span class="text-sm text-blue-700">应用将创建在当前业务「<strong>蓝鲸</strong>」下</span>
+                </div>
+                <form class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">应用名称 <span class="text-red-500">*</span></label>
+                        <input type="text" placeholder="请输入应用名称" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">应用别名</label>
+                        <input type="text" placeholder="英文标识，用于 API 调用" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">应用类型 <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="border-2 border-blue-500 rounded-lg p-4 cursor-pointer bg-blue-50">
+                                <input type="radio" name="app-type" value="web" checked class="hidden">
+                                <div class="flex items-center">
+                                    <span class="mdi mdi-web text-2xl text-blue-500 mr-3"></span>
+                                    <div><div class="font-medium">Web 应用</div><div class="text-xs text-gray-500">PC/移动端网页</div></div>
+                                </div>
+                            </label>
+                            <label class="border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-gray-300">
+                                <input type="radio" name="app-type" value="ios" class="hidden">
+                                <div class="flex items-center">
+                                    <span class="mdi mdi-apple text-2xl text-gray-700 mr-3"></span>
+                                    <div><div class="font-medium">iOS 应用</div><div class="text-xs text-gray-500">iOS 原生 App</div></div>
+                                </div>
+                            </label>
+                            <label class="border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-gray-300">
+                                <input type="radio" name="app-type" value="android" class="hidden">
+                                <div class="flex items-center">
+                                    <span class="mdi mdi-android text-2xl text-green-500 mr-3"></span>
+                                    <div><div class="font-medium">Android 应用</div><div class="text-xs text-gray-500">Android 原生 App</div></div>
+                                </div>
+                            </label>
+                            <label class="border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-gray-300">
+                                <input type="radio" name="app-type" value="miniprogram" class="hidden">
+                                <div class="flex items-center">
+                                    <span class="mdi mdi-wechat text-2xl text-green-500 mr-3"></span>
+                                    <div><div class="font-medium">小程序</div><div class="text-xs text-gray-500">微信/支付宝小程序</div></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">负责人 <span class="text-red-500">*</span></label>
+                        <input type="text" placeholder="搜索并添加负责人" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">域名白名单 <span class="text-red-500">*</span></label>
+                        <textarea rows="3" placeholder="每行一个域名，支持通配符，如 *.example.com" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">应用描述</label>
+                        <textarea rows="3" placeholder="请输入应用描述" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 p-6 border-t bg-white flex justify-end space-x-4">
+                <button onclick="hideCreateModal()" class="px-6 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition">取消</button>
+                <button onclick="createApp()" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">创建并接入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认 Modal -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="modal-overlay absolute inset-0" onclick="hideDeleteModal()"></div>
+        <div class="relative bg-white rounded-lg shadow-xl w-[400px] p-6">
+            <div class="flex items-center mb-4">
+                <span class="mdi mdi-alert-circle text-3xl text-red-500 mr-3"></span>
+                <h3 class="text-lg font-semibold">确认删除</h3>
+            </div>
+            <p class="text-gray-600 mb-6">确定要删除应用 "<span id="delete-app-name">官网首页</span>" 吗？删除后该应用的所有监控数据将被清除，且无法恢复。</p>
+            <div class="flex justify-end space-x-4">
+                <button onclick="hideDeleteModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition">取消</button>
+                <button class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAppList() {
+            document.getElementById('app-list-view').classList.remove('hidden');
+            document.getElementById('app-config-view').classList.add('hidden');
+        }
+
+        function showAppConfig(appName) {
+            document.getElementById('app-list-view').classList.add('hidden');
+            document.getElementById('app-config-view').classList.remove('hidden');
+            document.getElementById('current-app-name').textContent = appName;
+            switchTab('basic');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('#config-tabs button').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('text-gray-500');
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            event.target.closest('button').classList.add('tab-active');
+            event.target.closest('button').classList.remove('text-gray-500');
+        }
+
+        function showCreateModal() { document.getElementById('create-modal').classList.remove('hidden'); }
+        function hideCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
+        function confirmDelete(appName) {
+            document.getElementById('delete-app-name').textContent = appName;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+        function hideDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
+
+        function createApp() {
+            hideCreateModal();
+            showAppConfig('新应用');
+            switchTab('sdk');
+        }
+
+        function updateWeight(el, targetId) {
+            document.getElementById(targetId).textContent = el.value + '%';
+        }
+
+        document.querySelectorAll('input[name="app-type"]').forEach(input => {
+            input.addEventListener('change', function() {
+                document.querySelectorAll('input[name="app-type"]').forEach(i => {
+                    i.closest('label').classList.remove('border-blue-500', 'bg-blue-50');
+                    i.closest('label').classList.add('border-gray-200');
+                });
+                this.closest('label').classList.add('border-blue-500', 'bg-blue-50');
+                this.closest('label').classList.remove('border-gray-200');
+            });
+        });
+
+        document.querySelectorAll('input[name="sdk-type"]').forEach(input => {
+            input.addEventListener('change', function() {
+                document.querySelectorAll('input[name="sdk-type"]').forEach(i => {
+                    i.closest('label').classList.remove('border-blue-500', 'bg-blue-50');
+                    i.closest('label').classList.add('border-gray-200');
+                });
+                this.closest('label').classList.add('border-blue-500', 'bg-blue-50');
+                this.closest('label').classList.remove('border-gray-200');
+            });
+        });
+    </script>
+</body>
+</html>

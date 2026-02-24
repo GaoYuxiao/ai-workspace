@@ -1,0 +1,4 @@
+mcp>=0.9.0
+httpx>=0.26.0
+feedparser>=6.0.10
+

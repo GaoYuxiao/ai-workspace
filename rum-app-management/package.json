@@ -1,0 +1,12 @@
+{
+  "name": "rum-screenshots",
+  "version": "1.0.0",
+  "description": "Automated screenshot capture for RUM application management page",
+  "main": "capture-screenshots.js",
+  "scripts": {
+    "capture": "node capture-screenshots.js"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

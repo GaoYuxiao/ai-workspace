@@ -1,0 +1,401 @@
+{
+  "test_name": "BKLog综合功能测试",
+  "description": "按顺序验证BKLog的7个核心功能：检索查询高亮、分词检查、排序、上下文查看、新版上下文、日志下载、字段分析",
+  "url": "https://bklog.woa.com",
+  "timeout": 300000,
+  "test_cases": [
+    {
+      "test_name": "测试用例1：检索页面查询和高亮展示",
+      "description": "通过查询语句和UI查询验证检索功能，并检查高亮展示",
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://bklog.woa.com",
+          "description": "导航到日志平台首页"
+        },
+        {
+          "action": "wait_for",
+          "text": "日志",
+          "timeout": 10000,
+          "description": "等待页面加载完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取页面快照，定位业务选择器"
+        },
+        {
+          "action": "click",
+          "target": "业务选择器",
+          "description": "点击业务选择器"
+        },
+        {
+          "action": "click",
+          "target": "demo业务选项",
+          "description": "选择demo业务"
+        },
+        {
+          "action": "wait_for",
+          "text": "索引集",
+          "timeout": 5000,
+          "description": "等待业务切换完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取检索页面快照"
+        },
+        {
+          "action": "click",
+          "target": "索引集选择器",
+          "description": "点击索引集选择器"
+        },
+        {
+          "action": "click",
+          "target": "容器日志索引集",
+          "description": "选择容器日志索引集"
+        },
+        {
+          "action": "wait_for",
+          "text": "检索",
+          "timeout": 3000,
+          "description": "等待索引集加载完成"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取检索区域快照"
+        },
+        {
+          "action": "click",
+          "target": "语句模式按钮",
+          "description": "切换到语句模式"
+        },
+        {
+          "action": "fill",
+          "target": "查询语句输入框",
+          "value": "level:WARN",
+          "description": "在语句模式输入查询语句 level:WARN"
+        },
+        {
+          "action": "click",
+          "target": "检索按钮",
+          "description": "点击检索按钮执行查询"
+        },
+        {
+          "action": "wait_for",
+          "text": "条结果",
+          "timeout": 10000,
+          "description": "等待查询结果加载"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取查询结果快照，检查高亮展示"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const logs = document.querySelectorAll('[class*=\"log\"], [class*=\"row\"]'); const highlighted = Array.from(logs).filter(el => el.querySelectorAll('[class*=\"highlight\"], mark, [style*=\"background\"]').length > 0); return { totalLogs: logs.length, highlightedLogs: highlighted.length, hasHighlight: highlighted.length > 0 }; }",
+          "description": "检查查询结果中是否有高亮展示"
+        },
+        {
+          "action": "click",
+          "target": "UI模式按钮",
+          "description": "切换到UI模式"
+        },
+        {
+          "action": "wait_for",
+          "text": "添加条件",
+          "timeout": 3000,
+          "description": "等待UI模式加载"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取UI模式检索区域快照"
+        },
+        {
+          "action": "fill",
+          "target": "level筛选输入框",
+          "value": "ERROR",
+          "description": "在UI模式下输入level筛选条件ERROR"
+        },
+        {
+          "action": "click",
+          "target": "检索按钮",
+          "description": "点击检索按钮执行UI查询"
+        },
+        {
+          "action": "wait_for",
+          "text": "条结果",
+          "timeout": 10000,
+          "description": "等待UI查询结果加载"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取UI查询结果快照，检查高亮展示"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "text_contains",
+          "target": "查询结果",
+          "expected_value": "条结果",
+          "description": "验证语句模式查询返回了结果"
+        },
+        {
+          "type": "custom_script",
+          "script": "() => { const logs = document.querySelectorAll('[class*=\"log\"], [class*=\"row\"]'); return logs.length > 0; }",
+          "expected_value": true,
+          "description": "验证查询结果中有日志内容"
+        },
+        {
+          "type": "text_contains",
+          "target": "查询结果",
+          "expected_value": "条结果",
+          "description": "验证UI模式查询返回了结果"
+        }
+      ]
+    },
+    {
+      "test_name": "测试用例2：检索页面分词检查",
+      "description": "点击某条日志的某个分词显示蓝色可选，点击添加至本次检索",
+      "steps": [
+        {
+          "action": "snapshot",
+          "description": "获取当前日志列表快照"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const logRows = document.querySelectorAll('[class*=\"log\"], [class*=\"row\"], tr'); if (logRows.length === 0) return { found: false }; const firstLog = logRows[0]; const textContent = firstLog.textContent || ''; const words = textContent.split(/\\s+/).filter(w => w.length > 2).slice(0, 5); return { found: true, firstLogText: textContent.substring(0, 100), words: words }; }",
+          "description": "获取第一条日志的内容，用于查找分词"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const logRows = document.querySelectorAll('[class*=\"log\"], [class*=\"row\"], tr'); if (logRows.length === 0) return { found: false }; const firstLog = logRows[0]; const clickableWords = firstLog.querySelectorAll('[class*=\"word\"], [class*=\"token\"], [class*=\"keyword\"], span[style*=\"color\"], span[style*=\"blue\"]'); return { found: true, clickableWordsCount: clickableWords.length, hasClickableWords: clickableWords.length > 0 }; }",
+          "description": "检查日志中是否有可点击的分词元素"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const logRows = document.querySelectorAll('[class*=\"log\"], [class*=\"row\"], tr'); if (logRows.length === 0) return { found: false }; const firstLog = logRows[0]; const words = firstLog.querySelectorAll('span, a, [class*=\"word\"], [class*=\"token\"]'); let clickableWord = null; for (let word of words) { const text = word.textContent?.trim() || ''; const style = window.getComputedStyle(word); if (text.length > 2 && (style.color.includes('blue') || word.classList.toString().includes('word') || word.classList.toString().includes('token'))) { clickableWord = { element: word, text: text, uid: word.getAttribute('data-uid') || null }; break; } } return { found: clickableWord !== null, clickableWord: clickableWord }; }",
+          "description": "查找可点击的分词元素"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取日志列表详细快照，定位分词元素"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "custom_script",
+          "script": "() => { const logRows = document.querySelectorAll('[class*=\"log\"], [class*=\"row\"], tr'); return logRows.length > 0; }",
+          "expected_value": true,
+          "description": "验证日志列表中有日志内容"
+        }
+      ]
+    },
+    {
+      "test_name": "测试用例3：日志排序检查",
+      "description": "设置排序权重升序降序，验证排序功能",
+      "steps": [
+        {
+          "action": "snapshot",
+          "description": "获取日志列表和排序控件快照"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const sortButtons = document.querySelectorAll('[class*=\"sort\"], [aria-label*=\"排序\"], button[title*=\"排序\"]'); return { found: sortButtons.length > 0, count: sortButtons.length, buttons: Array.from(sortButtons).map(b => ({ text: b.textContent, class: b.className })) }; }",
+          "description": "查找排序相关的按钮或控件"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取排序区域详细快照"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "custom_script",
+          "script": "() => { const sortControls = document.querySelectorAll('[class*=\"sort\"], [aria-label*=\"排序\"]'); return sortControls.length > 0; }",
+          "expected_value": true,
+          "description": "验证页面中存在排序控件"
+        }
+      ]
+    },
+    {
+      "test_name": "测试用例4：日志上下文查看（多种索引集）",
+      "description": "测试采集项索引集、bkbase索引集、第三方索引集的上下文查看功能，检查定位准确性和上下翻页",
+      "steps": [
+        {
+          "action": "snapshot",
+          "description": "获取当前日志列表快照"
+        },
+        {
+          "action": "click",
+          "target": "第一条日志的上下文按钮",
+          "description": "点击第一条日志的上下文按钮"
+        },
+        {
+          "action": "wait_for",
+          "text": "上下文",
+          "timeout": 5000,
+          "description": "等待上下文面板打开"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取上下文面板快照"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"], [class*=\"context\"], [class*=\"dialog\"]'); if (!contextPanel) return { found: false }; const logLines = contextPanel.querySelectorAll('[class*=\"log\"], [class*=\"line\"], pre, code, [class*=\"content\"]'); const currentLine = contextPanel.querySelector('[class*=\"current\"], [class*=\"highlight\"], [class*=\"active\"]'); return { found: true, logLinesCount: logLines.length, hasCurrentLine: currentLine !== null, currentLineText: currentLine?.textContent?.substring(0, 50) || null }; }",
+          "description": "检查上下文面板中的日志内容和当前行定位"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"], [class*=\"context\"]'); if (!contextPanel) return { found: false }; const prevButton = contextPanel.querySelector('[aria-label*=\"上\"], [aria-label*=\"前\"], [title*=\"上\"], button:contains(\"上\")'); const nextButton = contextPanel.querySelector('[aria-label*=\"下\"], [aria-label*=\"后\"], [title*=\"下\"], button:contains(\"下\")'); return { found: true, hasPrevButton: prevButton !== null, hasNextButton: nextButton !== null }; }",
+          "description": "检查上下文面板中的上下翻页按钮"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取上下文面板控制按钮快照"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "element_exists",
+          "target": "上下文面板容器",
+          "description": "验证上下文面板已打开"
+        },
+        {
+          "type": "custom_script",
+          "script": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"], [class*=\"context\"]'); return contextPanel !== null; }",
+          "expected_value": true,
+          "description": "验证上下文面板存在"
+        }
+      ]
+    },
+    {
+      "test_name": "测试用例5：新版日志上下文功能验证",
+      "description": "验证新版上下文功能是否符合逻辑",
+      "steps": [
+        {
+          "action": "snapshot",
+          "description": "获取上下文面板详细快照，检查新版功能"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"], [class*=\"context\"]'); if (!contextPanel) return { found: false }; const features = { hasHighlightInput: contextPanel.querySelector('input[placeholder*=\"高亮\"], input[placeholder*=\"关键字\"]') !== null, hasFullScreen: contextPanel.querySelector('[class*=\"fullscreen\"], [aria-label*=\"全屏\"]') !== null, hasFieldConfig: contextPanel.querySelector('[class*=\"config\"], [class*=\"setting\"]') !== null, hasFilter: contextPanel.querySelector('[class*=\"filter\"], [aria-label*=\"过滤\"]') !== null }; return { found: true, features: features }; }",
+          "description": "检查新版上下文功能特性"
+        },
+        {
+          "action": "fill",
+          "target": "高亮输入框",
+          "value": "test",
+          "description": "测试高亮输入功能"
+        },
+        {
+          "action": "press_key",
+          "key": "Enter",
+          "description": "应用高亮"
+        },
+        {
+          "action": "wait_for",
+          "text": "搜索结果",
+          "timeout": 3000,
+          "description": "等待高亮结果"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取高亮后的上下文面板快照"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "element_exists",
+          "target": "高亮输入框",
+          "description": "验证高亮输入框存在"
+        }
+      ]
+    },
+    {
+      "test_name": "测试用例6：日志下载功能",
+      "description": "点击日志下载，验证是否可以成功下载日志；通过下载历史重新下载，验证是否可以下载日志",
+      "steps": [
+        {
+          "action": "click",
+          "target": "关闭按钮",
+          "description": "关闭上下文面板（如果打开）"
+        },
+        {
+          "action": "wait_for",
+          "text": "检索",
+          "timeout": 3000,
+          "description": "等待返回检索页面"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取检索结果页面快照，定位下载按钮"
+        },
+        {
+          "action": "click",
+          "target": "导出按钮",
+          "description": "点击导出/下载按钮"
+        },
+        {
+          "action": "wait_for",
+          "text": "下载",
+          "timeout": 5000,
+          "description": "等待下载对话框或选项出现"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取下载选项快照"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const downloadDialogs = document.querySelectorAll('[class*=\"download\"], [class*=\"export\"], [aria-label*=\"下载\"]'); const downloadHistory = document.querySelectorAll('[class*=\"history\"], [aria-label*=\"历史\"], [class*=\"download-history\"]'); return { hasDownloadDialog: downloadDialogs.length > 0, hasDownloadHistory: downloadHistory.length > 0 }; }",
+          "description": "检查下载对话框和下载历史"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取下载历史区域快照（如果存在）"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "element_exists",
+          "target": "导出按钮",
+          "description": "验证导出按钮存在"
+        }
+      ]
+    },
+    {
+      "test_name": "测试用例7：字段分析功能",
+      "description": "点击字段分析，观察字段分析结果是否正常展示；数量与总趋势的统计数量是否一致",
+      "steps": [
+        {
+          "action": "snapshot",
+          "description": "获取检索结果页面快照，定位字段分析按钮"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const fieldAnalysisButtons = document.querySelectorAll('[class*=\"field\"], [class*=\"analysis\"], [aria-label*=\"字段\"], [aria-label*=\"分析\"], button:contains(\"字段\"), button:contains(\"分析\")'); return { found: fieldAnalysisButtons.length > 0, count: fieldAnalysisButtons.length, buttons: Array.from(fieldAnalysisButtons).map(b => ({ text: b.textContent?.substring(0, 20), class: b.className })) }; }",
+          "description": "查找字段分析相关的按钮"
+        },
+        {
+          "action": "snapshot",
+          "description": "获取字段分析区域快照"
+        },
+        {
+          "action": "evaluate_script",
+          "function": "() => { const fieldFilterBox = document.querySelector('[data-test-id=\"retrieve_div_fieldFilterBox\"], [class*=\"field-filter\"], [class*=\"field-analysis\"]'); if (!fieldFilterBox) return { found: false }; const stats = fieldFilterBox.querySelectorAll('[class*=\"stat\"], [class*=\"count\"], [class*=\"total\"]'); const trends = fieldFilterBox.querySelectorAll('[class*=\"trend\"], [class*=\"chart\"]'); return { found: true, statsCount: stats.length, trendsCount: trends.length, hasContent: fieldFilterBox.textContent.length > 0 }; }",
+          "description": "检查字段分析结果展示"
+        }
+      ],
+      "expected_results": [
+        {
+          "type": "custom_script",
+          "script": "() => { const fieldAnalysis = document.querySelector('[data-test-id=\"retrieve_div_fieldFilterBox\"], [class*=\"field-filter\"]'); return fieldAnalysis !== null; }",
+          "expected_value": true,
+          "description": "验证字段分析区域存在"
+        }
+      ]
+    }
+  ]
+}
+
+

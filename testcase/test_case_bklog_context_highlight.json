@@ -1,0 +1,163 @@
+{
+  "test_name": "日志上下文功能与高亮测试",
+  "description": "测试日志平台的上下文查看功能：选择demo业务，查询WARN级别日志，打开上下文面板，验证上下文请求正常，验证上下文内容正确性，并测试高亮功能",
+  "url": "https://bklog.woa.com",
+  "timeout": 60000,
+  "steps": [
+    {
+      "action": "navigate",
+      "url": "https://bklog.woa.com",
+      "description": "导航到日志平台首页"
+    },
+    {
+      "action": "wait_for",
+      "text": "日志平台",
+      "timeout": 10000,
+      "description": "等待页面加载完成"
+    },
+    {
+      "action": "snapshot",
+      "description": "获取页面快照，定位demo业务选择器"
+    },
+    {
+      "action": "click",
+      "target": "demo业务选择器",
+      "description": "点击选择demo业务",
+      "wait_after": true
+    },
+    {
+      "action": "wait_for",
+      "text": "demo",
+      "timeout": 5000,
+      "description": "等待业务切换完成"
+    },
+    {
+      "action": "snapshot",
+      "description": "获取日志检索页面快照"
+    },
+    {
+      "action": "fill",
+      "target": "level筛选输入框",
+      "value": "WARN",
+      "description": "在level筛选器中输入WARN"
+    },
+    {
+      "action": "press_key",
+      "key": "Enter",
+      "description": "按Enter键应用筛选条件"
+    },
+    {
+      "action": "wait_for",
+      "text": "条结果",
+      "timeout": 10000,
+      "description": "等待日志查询结果加载"
+    },
+    {
+      "action": "snapshot",
+      "description": "获取查询结果页面快照，定位上下文按钮"
+    },
+    {
+      "action": "click",
+      "target": "第一条WARN日志的上下文按钮",
+      "description": "点击第一条WARN日志的上下文按钮",
+      "wait_after": true
+    },
+    {
+      "action": "wait_for",
+      "text": "上下文",
+      "timeout": 5000,
+      "description": "等待上下文面板打开"
+    },
+    {
+      "action": "snapshot",
+      "description": "获取上下文面板快照"
+    },
+    {
+      "action": "evaluate_script",
+      "function": "() => { const requests = performance.getEntriesByType('resource').filter(r => r.name.includes('/api/v1/search/index_set') && r.name.includes('/search/')); return requests.length > 0 ? { found: true, count: requests.length, lastRequest: requests[requests.length - 1].name, status: requests[requests.length - 1].responseStatus || 'unknown' } : { found: false }; }",
+      "description": "检查上下文相关的网络请求（通过性能API）"
+    },
+    {
+      "action": "snapshot",
+      "description": "获取上下文面板内容快照，用于验证上下文正确性"
+    },
+    {
+      "action": "evaluate_script",
+      "function": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"]') || document.querySelector('.context-panel') || document.querySelector('[class*=\"context\"]'); if (!contextPanel) return { found: false }; const logContent = contextPanel.querySelectorAll('[class*=\"log\"], [class*=\"line\"], pre, code'); return { found: true, logCount: logContent.length, hasContent: logContent.length > 0 }; }",
+      "description": "验证上下文面板中是否有日志内容"
+    },
+    {
+      "action": "fill",
+      "target": "上下文高亮输入框",
+      "value": "123",
+      "description": "在上下文面板的高亮输入框中输入123"
+    },
+    {
+      "action": "press_key",
+      "key": "Enter",
+      "description": "按Enter键应用高亮"
+    },
+    {
+      "action": "wait_for",
+      "text": "搜索结果",
+      "timeout": 3000,
+      "description": "等待高亮搜索结果"
+    },
+    {
+      "action": "snapshot",
+      "description": "获取高亮后的上下文面板快照"
+    },
+    {
+      "action": "evaluate_script",
+      "function": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"]') || document.querySelector('.context-panel'); if (!contextPanel) return { found: false }; const highlighted = contextPanel.querySelectorAll('[class*=\"highlight\"], mark, [style*=\"background\"]'); return { found: true, highlightedCount: highlighted.length, hasHighlight: highlighted.length > 0 }; }",
+      "description": "验证高亮功能是否生效"
+    }
+  ],
+  "expected_results": [
+    {
+      "type": "url_contains",
+      "expected_value": "bklog.woa.com",
+      "description": "验证已导航到日志平台"
+    },
+    {
+      "type": "element_exists",
+      "target": "demo",
+      "description": "验证demo业务已选择"
+    },
+    {
+      "type": "text_contains",
+      "target": "查询结果",
+      "expected_value": "条结果",
+      "description": "验证日志查询返回了结果"
+    },
+    {
+      "type": "element_exists",
+      "target": "上下文",
+      "description": "验证上下文面板已打开"
+    },
+    {
+      "type": "custom_script",
+      "script": "() => { const requests = performance.getEntriesByType('resource').filter(r => r.name.includes('/api/v1/search/index_set') && r.name.includes('/search/')); if (requests.length === 0) return false; const lastRequest = requests[requests.length - 1]; return lastRequest.responseStatus >= 200 && lastRequest.responseStatus < 300; }",
+      "expected_value": true,
+      "description": "验证上下文请求已发送且状态码为2xx（通过性能API检查）"
+    },
+    {
+      "type": "custom_script",
+      "script": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"]') || document.querySelector('.context-panel'); if (!contextPanel) return false; const logContent = contextPanel.querySelectorAll('[class*=\"log\"], [class*=\"line\"], pre, code'); return logContent.length > 0; }",
+      "expected_value": true,
+      "description": "验证上下文面板中显示了日志内容"
+    },
+    {
+      "type": "element_exists",
+      "target": "高亮输入框",
+      "description": "验证高亮输入框存在"
+    },
+    {
+      "type": "custom_script",
+      "script": "() => { const contextPanel = document.querySelector('[aria-label*=\"上下文\"]') || document.querySelector('.context-panel'); if (!contextPanel) return false; const highlightInput = contextPanel.querySelector('input[placeholder*=\"高亮\"], input[placeholder*=\"关键字\"], input[type=\"text\"]'); return highlightInput && highlightInput.value === '123'; }",
+      "expected_value": true,
+      "description": "验证高亮输入框中已输入123"
+    }
+  ]
+}
+

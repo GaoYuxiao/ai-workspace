@@ -1,0 +1,190 @@
+{
+  "error_timeline": [
+    {
+      "time": "17:10:40",
+      "errors": 1,
+      "type": "invalid credentials"
+    },
+    {
+      "time": "17:11:22",
+      "errors": 1,
+      "type": "network error"
+    },
+    {
+      "time": "17:11:56",
+      "errors": 1,
+      "type": "invalid credentials"
+    },
+    {
+      "time": "17:12:31",
+      "errors": 1,
+      "type": "invalid credentials"
+    },
+    {
+      "time": "17:13:07",
+      "errors": 1,
+      "type": "network error"
+    },
+    {
+      "time": "17:13:41",
+      "errors": 1,
+      "type": "connection timeout"
+    },
+    {
+      "time": "17:14:32",
+      "errors": 1,
+      "type": "network error"
+    },
+    {
+      "time": "17:15:51",
+      "errors": 1,
+      "type": "invalid credentials"
+    },
+    {
+      "time": "17:19:26",
+      "errors": 1,
+      "type": "network error"
+    },
+    {
+      "time": "17:19:34",
+      "errors": 1,
+      "type": "connection timeout"
+    },
+    {
+      "time": "17:20:27",
+      "errors": 1,
+      "type": "connection timeout"
+    },
+    {
+      "time": "17:21:15",
+      "errors": 1,
+      "type": "connection timeout"
+    },
+    {
+      "time": "17:21:16",
+      "errors": 1,
+      "type": "invalid credentials"
+    },
+    {
+      "time": "17:22:44",
+      "errors": 1,
+      "type": "network error"
+    },
+    {
+      "time": "17:24:23",
+      "errors": 1,
+      "type": "connection timeout"
+    },
+    {
+      "time": "17:24:53",
+      "errors": 1,
+      "type": "invalid credentials"
+    }
+  ],
+  "connection_pool": [
+    {
+      "time": "17:11:06",
+      "active": 8,
+      "idle": 20,
+      "total": 28,
+      "usage": 28.6
+    },
+    {
+      "time": "17:11:31",
+      "active": 14,
+      "idle": 22,
+      "total": 36,
+      "usage": 38.9
+    },
+    {
+      "time": "17:12:29",
+      "active": 18,
+      "idle": 11,
+      "total": 29,
+      "usage": 62.1
+    },
+    {
+      "time": "17:13:13",
+      "active": 16,
+      "idle": 17,
+      "total": 33,
+      "usage": 48.5
+    },
+    {
+      "time": "17:14:25",
+      "active": 15,
+      "idle": 19,
+      "total": 34,
+      "usage": 44.1
+    },
+    {
+      "time": "17:15:39",
+      "active": 12,
+      "idle": 48,
+      "total": 60,
+      "usage": 20.0
+    },
+    {
+      "time": "17:15:41",
+      "active": 16,
+      "idle": 24,
+      "total": 40,
+      "usage": 40.0
+    },
+    {
+      "time": "17:15:48",
+      "active": 18,
+      "idle": 38,
+      "total": 56,
+      "usage": 32.1
+    },
+    {
+      "time": "17:17:32",
+      "active": 20,
+      "idle": 43,
+      "total": 63,
+      "usage": 31.7
+    },
+    {
+      "time": "17:19:01",
+      "active": 9,
+      "idle": 47,
+      "total": 56,
+      "usage": 16.1
+    },
+    {
+      "time": "17:19:16",
+      "active": 13,
+      "idle": 40,
+      "total": 53,
+      "usage": 24.5
+    },
+    {
+      "time": "17:23:14",
+      "active": 7,
+      "idle": 30,
+      "total": 37,
+      "usage": 18.9
+    },
+    {
+      "time": "17:24:39",
+      "active": 12,
+      "idle": 21,
+      "total": 33,
+      "usage": 36.4
+    }
+  ],
+  "error_by_minute": {
+    "17:10": 1,
+    "17:11": 2,
+    "17:12": 1,
+    "17:13": 2,
+    "17:14": 1,
+    "17:15": 1,
+    "17:19": 2,
+    "17:20": 1,
+    "17:21": 2,
+    "17:22": 1,
+    "17:24": 2
+  }
+}

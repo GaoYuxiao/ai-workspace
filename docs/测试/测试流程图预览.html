@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试流程图预览</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            color: #555;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #666;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .diagram-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .description {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .description ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .description li {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            background: #dee2e6;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #FF9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 测试流程可视化</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('basic')">基础流程图</button>
+            <button class="tab" onclick="showTab('detailed')">详细流程图</button>
+            <button class="tab" onclick="showTab('parallel')">并行处理</button>
+            <button class="tab" onclick="showTab('exception')">异常处理</button>
+        </div>
+        
+        <!-- 基础流程图 -->
+        <div id="basic" class="tab-content active">
+            <h2>📊 完整测试流程（基础版）</h2>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart TD
+    Start([测试启动]) --> Generate[测试用例生成]
+    Generate --> Execute[执行测试]
+    Execute --> MCP[MCP运行并记录]
+    MCP --> Result[测试结果]
+    Result --> Visualize[可视化报告]
+    Visualize --> Review[人工校验审核]
+    Review --> Pass{审核通过?}
+    Pass -->|是| End([完成])
+    Pass -->|否| Fix[问题修复]
+    Fix --> Execute
+    
+    style Start fill:#e1f5ff
+    style Generate fill:#fff4e1
+    style Execute fill:#ffe1f5
+    style MCP fill:#e1ffe1
+    style Result fill:#f5e1ff
+    style Visualize fill:#ffe1e1
+    style Review fill:#ffffe1
+    style End fill:#e1f5ff
+    style Fix fill:#ffcccc
+                </div>
+            </div>
+            
+            <div class="description">
+                <h3>流程说明</h3>
+                <ul>
+                    <li><strong>测试启动</strong>：触发测试任务，初始化测试环境，准备测试数据</li>
+                    <li><strong>测试用例生成</strong>：根据需求生成测试用例，定义测试场景和预期结果</li>
+                    <li><strong>执行测试</strong>：运行自动化测试脚本，执行功能测试，收集执行日志</li>
+                    <li><strong>MCP运行并记录</strong>：调用MCP工具执行操作，记录MCP调用日志，保存执行结果</li>
+                    <li><strong>测试结果</strong>：汇总测试数据，分析测试结果，生成原始测试报告</li>
+                    <li><strong>可视化报告</strong>：生成图表和统计信息，格式化测试报告，展示关键指标</li>
+                    <li><strong>人工校验审核</strong>：人工审查测试结果，验证报告准确性，确认测试覆盖度</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <strong>流程分支说明：</strong><br>
+                • <strong>审核通过</strong>：测试流程完成，结果归档<br>
+                • <strong>审核不通过</strong>：进入问题修复流程，修复后重新执行测试
+            </div>
+        </div>
+        
+        <!-- 详细流程图 -->
+        <div id="detailed" class="tab-content">
+            <h2>🔍 完整测试流程（详细版）</h2>
+            <div class="diagram-container">
+                <div class="mermaid" id="detailed-main">
+flowchart TD
+    Start([测试启动]) --> Init[初始化测试环境]
+    Init --> Config[配置测试参数]
+    Config --> Generate[测试用例生成]
+    
+    Generate --> Case1[生成功能测试用例]
+    Generate --> Case2[生成性能测试用例]
+    Generate --> Case3[生成集成测试用例]
+    
+    Case1 --> Execute[执行测试]
+    Case2 --> Execute
+    Case3 --> Execute
+    
+    Execute --> RunScript[运行测试脚本]
+    RunScript --> CollectLog[收集执行日志]
+    CollectLog --> MCP[MCP运行并记录]
+    
+    MCP --> MCPCall[调用MCP工具]
+    MCPCall --> MCPRecord[记录MCP调用日志]
+    MCPRecord --> MCPResult[保存MCP执行结果]
+    
+    MCPResult --> Result[测试结果]
+    Result --> Analyze[分析测试数据]
+    Analyze --> Aggregate[汇总测试结果]
+    
+    Aggregate --> Visualize[可视化报告]
+    Visualize --> Chart[生成图表]
+    Visualize --> Stats[生成统计数据]
+    Chart --> Report[格式化报告]
+    Stats --> Report
+    
+    Report --> Review[人工校验审核]
+    Review --> Check1[检查测试覆盖度]
+    Review --> Check2[验证结果准确性]
+    Review --> Check3[确认报告完整性]
+    
+    Check1 --> Decision{审核通过?}
+    Check2 --> Decision
+    Check3 --> Decision
+    
+    Decision -->|是| Archive[归档测试结果]
+    Decision -->|否| Fix[问题修复]
+    
+    Archive --> End([测试完成])
+    Fix --> AnalyzeIssue[分析问题原因]
+    AnalyzeIssue --> UpdateCase[更新测试用例]
+    UpdateCase --> Execute
+    
+    style Start fill:#4CAF50,color:#fff
+    style Generate fill:#2196F3,color:#fff
+    style Execute fill:#FF9800,color:#fff
+    style MCP fill:#9C27B0,color:#fff
+    style Result fill:#F44336,color:#fff
+    style Visualize fill:#00BCD4,color:#fff
+    style Review fill:#FFC107,color:#000
+    style End fill:#4CAF50,color:#fff
+    style Fix fill:#E91E63,color:#fff
+                </div>
+            </div>
+            
+            <h3>各阶段详细说明</h3>
+            
+            <h4>阶段1: 测试启动</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[测试启动] --> B[初始化测试环境]
+    B --> C[准备测试数据]
+    C --> D[配置测试参数]
+    D --> E[验证环境就绪]
+                </div>
+            </div>
+            
+            <h4>阶段2: 测试用例生成</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[需求分析] --> B[场景设计]
+    B --> C[用例编写]
+    C --> D[用例评审]
+    D --> E[用例入库]
+                </div>
+            </div>
+            
+            <h4>阶段3: 执行测试</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[执行测试] --> B[运行脚本]
+    B --> C[收集日志]
+    C --> D[捕获异常]
+    D --> E[记录结果]
+                </div>
+            </div>
+            
+            <h4>阶段4: MCP运行并记录</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[MCP调用] --> B[执行操作]
+    B --> C[记录请求]
+    C --> D[记录响应]
+    D --> E[保存结果]
+                </div>
+            </div>
+            
+            <h4>阶段5: 测试结果</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[结果汇总] --> B[数据分析]
+    B --> C[问题识别]
+    C --> D[结果分类]
+    D --> E[生成报告]
+                </div>
+            </div>
+            
+            <h4>阶段6: 可视化报告</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[数据提取] --> B[图表生成]
+    B --> C[统计计算]
+    C --> D[报告格式化]
+    D --> E[报告输出]
+                </div>
+            </div>
+            
+            <h4>阶段7: 人工校验审核</h4>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[报告审查] --> B[结果验证]
+    B --> C[覆盖度检查]
+    C --> D[质量评估]
+    D --> E[审核决策]
+                </div>
+            </div>
+        </div>
+        
+        <!-- 并行处理流程 -->
+        <div id="parallel" class="tab-content">
+            <h2>⚡ 并行处理流程</h2>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart TD
+    Start([测试启动]) --> Parallel{并行执行}
+    
+    Parallel --> P1[功能测试]
+    Parallel --> P2[性能测试]
+    Parallel --> P3[集成测试]
+    
+    P1 --> MCP1[MCP记录1]
+    P2 --> MCP2[MCP记录2]
+    P3 --> MCP3[MCP记录3]
+    
+    MCP1 --> Merge[结果合并]
+    MCP2 --> Merge
+    MCP3 --> Merge
+    
+    Merge --> Visualize[可视化报告]
+    Visualize --> Review[人工审核]
+    Review --> End([完成])
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <strong>并行处理优势：</strong><br>
+                • 提高测试执行效率<br>
+                • 充分利用系统资源<br>
+                • 缩短整体测试时间<br>
+                • 支持多场景同时验证
+            </div>
+        </div>
+        
+        <!-- 异常处理流程 -->
+        <div id="exception" class="tab-content">
+            <h2>⚠️ 异常处理流程</h2>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart TD
+    Execute[执行测试] --> Error{发生错误?}
+    Error -->|是| LogError[记录错误]
+    Error -->|否| Continue[继续执行]
+    
+    LogError --> ErrorType{错误类型}
+    ErrorType -->|可恢复| Retry[重试]
+    ErrorType -->|不可恢复| Skip[跳过]
+    ErrorType -->|严重| Stop[停止测试]
+    
+    Retry --> Execute
+    Skip --> Continue
+    Stop --> Report[生成错误报告]
+    Continue --> Result[测试结果]
+    Report --> Review[人工审核]
+                </div>
+            </div>
+            
+            <h3>关键指标监控</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[测试执行率] --> D[监控面板]
+    B[通过率] --> D
+    C[覆盖率] --> D
+    E[执行时长] --> D
+    F[错误率] --> D
+    
+    D --> G[实时告警]
+    D --> H[趋势分析]
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong>异常处理策略：</strong><br>
+                • <strong>可恢复错误</strong>：自动重试，最多3次<br>
+                • <strong>不可恢复错误</strong>：跳过当前用例，继续执行其他测试<br>
+                • <strong>严重错误</strong>：立即停止测试，生成错误报告，通知相关人员
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 初始化 Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            securityLevel: 'loose'
+        });
+        
+        // Tab切换功能
+        function showTab(tabName) {
+            // 隐藏所有tab内容
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有tab的active状态
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的tab内容
+            const targetContent = document.getElementById(tabName);
+            targetContent.classList.add('active');
+            
+            // 激活对应的tab按钮
+            event.target.classList.add('active');
+            
+            // 如果切换到详细版，延迟检查并渲染未渲染的图表
+            if (tabName === 'detailed') {
+                setTimeout(() => {
+                    const detailedDiagrams = targetContent.querySelectorAll('.mermaid');
+                    detailedDiagrams.forEach((diagram) => {
+                        // 检查是否已渲染（是否有svg元素）
+                        const hasSvg = diagram.querySelector('svg') !== null;
+                        if (!hasSvg) {
+                            // 如果未渲染，尝试手动触发
+                            const graphDefinition = diagram.textContent.trim();
+                            if (graphDefinition) {
+                                // 创建一个新的div来渲染
+                                const newDiv = document.createElement('div');
+                                newDiv.className = 'mermaid';
+                                newDiv.textContent = graphDefinition;
+                                diagram.parentNode.replaceChild(newDiv, diagram);
+                                // 触发mermaid重新渲染
+                                mermaid.contentLoaded();
+                            }
+                        }
+                    });
+                }, 300);
+            }
+        }
+    </script>
+</body>
+</html>
+
