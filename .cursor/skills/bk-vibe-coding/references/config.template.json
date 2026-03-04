@@ -1,0 +1,38 @@
+{
+  "project_name": "your-project-name",
+  "tapd": {
+    "workspace_id": "10158081",
+    "workspace_name": "蓝鲸监控",
+    "default_iteration_id": "1010158081002227089",
+    "default_iteration_url": "https://tapd.woa.com/tapd_fe/10158081/iteration/card/1010158081002227089?q=882ae02758277407fb432c25d3b59a57"
+  },
+  "workflow": {
+    "story_status_flow": [
+      "backlog",
+      "todo",
+      "doing",
+      "for test",
+      "done"
+    ]
+  },
+  "delivery": {
+    "commit_template": "feat|fix|refactor|docs|chore: <subject> --story=<id>",
+    "story_id_format": "short",
+    "branch_policy": {
+      "protected_branches": [
+        "master",
+        "main"
+      ],
+      "allow_direct_push": false,
+      "require_feature_branch": true,
+      "branch_naming": "feat|fix|chore/<topic>-<storyId>"
+    },
+    "mr": {
+      "required": true,
+      "platform": "auto",
+      "base_branch": "master"
+    },
+    "test_command": "npm test",
+    "publish_command": "npm publish"
+  }
+}

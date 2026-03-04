@@ -1,0 +1,38 @@
+{
+  "project_name": "TAPD_product",
+  "tapd": {
+    "workspace_id": "<YOUR_WORKSPACE_ID>",
+    "workspace_name": "蓝鲸监控",
+    "default_iteration_id": "<YOUR_ITERATION_ID>",
+    "default_iteration_url": ""
+  },
+  "workflow": {
+    "story_status_flow": [
+      "backlog",
+      "todo",
+      "doing",
+      "for test",
+      "done"
+    ]
+  },
+  "delivery": {
+    "commit_template": "feat|fix|refactor|docs|chore: <subject> --story=<id>",
+    "story_id_format": "short",
+    "branch_policy": {
+      "protected_branches": [
+        "master",
+        "main"
+      ],
+      "allow_direct_push": false,
+      "require_feature_branch": true,
+      "branch_naming": "feat|fix|chore/<topic>-<storyId>"
+    },
+    "mr": {
+      "required": true,
+      "platform": "auto",
+      "base_branch": "master"
+    },
+    "test_command": "npm test",
+    "publish_command": "npm publish"
+  }
+}

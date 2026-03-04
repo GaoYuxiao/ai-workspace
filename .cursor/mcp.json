@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tapd_mcp_http": {
+      "url": "https://mcp-oa.tapd.woa.com/mcp/",
+      "timeout": 20000,
+      "headers": {
+        "X-Tapd-Access-Token": "<YOUR_TAPD_TOKEN>"
+      },
+      "transportType": "streamable-http"
+    }
+  }
+}
